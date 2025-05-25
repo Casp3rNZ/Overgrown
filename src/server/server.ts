@@ -21,7 +21,7 @@ wss.on("connection", (ws) => {
         velocity: { x: 0, y: 0, z: 0 },
         wishDirection: { x: 0, y: 0, z: 0 },
         moveDirection: { x: 0, y: 0, z: 0 },
-        isGrounded: true,
+        isGrounded: false,
         lastJumpTime: 0,
         jumpQueued: false,
         friction: 0,
@@ -40,11 +40,13 @@ wss.on("connection", (ws) => {
 
     ws.on("message", (msg) => {
         try {
-            const data = JSON.parse(msg.toString());
+            let data = JSON.parse(msg.toString());
+            data.input = JSON.parse(data.input);
             if (data.type === "input") {
-                inputs[id] = { ...inputs[id], ...data.input };
+                inputs[id] = data.input;
+                console.log(inputs[id]);
             }
-        } catch {}
+        } catch { }
     });
 
     ws.on("close", () => {

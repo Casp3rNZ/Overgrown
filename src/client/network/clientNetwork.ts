@@ -19,7 +19,7 @@ export class NetworkClient {
                 this.onReady(data.id);
             }
             if (data.type === "state" && data.players) {
-                this.onState(data.players);
+                this.onState(Object.values(data.players));
             }
         };
 

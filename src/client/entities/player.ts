@@ -46,23 +46,25 @@ export class PlayerController {
     }
 
     public handleKeyboardInput(event: KeyboardEvent, isDown: boolean): void {
-        console.log(`Key ${event.code} is ${isDown ? "down" : "up"}`);
-        switch (event.code) {
-            case "keyW":
+        console.log(`Key ${event.keyCode} is ${isDown ? "down" : "up"}`);
+        /* Temporary switch to keyCode because for some reason .code wasn't working :shrug: */
+        switch (event.keyCode) {
+            case 87:
                 this.input.forward = isDown;
                 break;
-            case "keyS":
+            case 83:
                 this.input.backward = isDown;
                 break;
-            case "keyA":
+            case 65:
                 this.input.left = isDown;
                 break;
-            case "keyD":
+            case 68:
                 this.input.right = isDown;
                 break;
-            case "Space":
+            case 32:
                 this.input.jump = isDown;
                 break;
+            default: break;
         }
     }
 
@@ -92,11 +94,12 @@ export class PlayerController {
 
     // Called when server sends new state
     public updateFromServer(state: any): void {
+        console.log(state.players)
         if (!state.players) {
             console.warn("No players in state:", state);
             return;
         }
-        const me = state.players[this.playerId];
+        const me = state.players[0];
         if (me) {
             console.log("Updating player position from server", me);
             this.mesh.position.set(me.position.x, me.position.y, me.position.z);
