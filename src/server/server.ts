@@ -43,8 +43,7 @@ wss.on("connection", (ws) => {
             let data = JSON.parse(msg.toString());
             data.input = JSON.parse(data.input);
             if (data.type === "input") {
-                inputs[id] = data.input;
-                console.log(inputs[id]);
+                inputs[id] = data.input.input;
             }
         } catch { }
     });

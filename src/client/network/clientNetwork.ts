@@ -33,7 +33,7 @@ export class NetworkClient {
     }
 
     public sendInput(input: any) {
-        if (!this.playerId) return;
+        if (!this.playerId || this.socket.readyState == 0) return;
         this.socket.send(JSON.stringify({
             type: "input",
             playerId: this.playerId,

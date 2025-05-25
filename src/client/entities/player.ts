@@ -1,10 +1,12 @@
 import { Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools } from "@babylonjs/core";
 import { PlayerInput } from "../../shared/movement";
 import { NetworkClient } from "../network/clientNetwork";
+import { StateInterpolator } from "./stateInterpolator";
 
 export class PlayerController {
     public mesh: Mesh;
     public camera: FreeCamera;
+    private stateInterpolator: StateInterpolator;
     private input: PlayerInput = {
         forward: false,
         backward: false,
@@ -20,6 +22,7 @@ export class PlayerController {
     constructor(scene: Scene, network: NetworkClient, playerId: string) {
         this.playerId = playerId;
         this.network = network;
+        this.stateInterpolator = new StateInterpolator();
         this.createPlayerMesh(scene);
         this.createCamera(scene);
         this.camera.fov = Tools.ToRadians(90);
@@ -42,7 +45,7 @@ export class PlayerController {
         this.camera.checkCollisions = true;
         this.camera.applyGravity = false; // We handle gravity in movement system
         this.camera.ellipsoid = new Vector3(0.5, 1, 0.5);
-        this.camera.attachControl(scene.getEngine().getRenderingCanvas(), true);
+        //this.camera.attachControl(scene.getEngine().getRenderingCanvas(), true);
     }
 
     public handleKeyboardInput(event: KeyboardEvent, isDown: boolean): void {
@@ -73,10 +76,10 @@ export class PlayerController {
             if (document.pointerLockElement === scene.getEngine().getRenderingCanvas()) {
                 const sensitivity = 0.002;
                 // yaw left/right
-                this.mesh.rotation.y += event.movementX * sensitivity;
+                this.mesh.rotation.y += event.movementX * sensitivity;  // Add this line back!
                 // pitch up/down
                 this.camera.rotation.x += event.movementY * sensitivity;
-                // Clamp pitcch to avoid flipping
+                // Clamp pitch to avoid flipping
                 this.camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotation.x));
             }
         });
@@ -84,26 +87,45 @@ export class PlayerController {
 
     // Called every frame
     public tick(): void {
+        const Input = {
+            forward: this.input.forward,
+            backward: this.input.backward,
+            left: this.input.left,
+            right: this.input.right,
+            jump: this.input.jump,
+            rotationY: this.mesh.rotation.y
+        }
+        console.log("sending rotation", Input.rotationY);
         const out = JSON.stringify({
             type: "input",
             playerId: this.playerId,
-            input: this.input
+            input: Input
         });
         this.network.sendInput(out);
     }
 
     // Called when server sends new state
     public updateFromServer(state: any): void {
-        console.log(state.players)
         if (!state.players) {
             console.warn("No players in state:", state);
             return;
         }
         const me = state.players[0];
         if (me) {
-            console.log("Updating player position from server", me);
-            this.mesh.position.set(me.position.x, me.position.y, me.position.z);
-            this.mesh.rotation.y = me.rotationY;
+            // Add the new state to the interpolator instead of directly setting position
+            this.stateInterpolator.addState(me);
+        }
+    }
+
+    // Called every frame to update visual position
+    public updateVisuals(): void {
+        const interpolatedState = this.stateInterpolator.getInterpolatedState();
+        if (interpolatedState) {
+            this.mesh.position.set(
+                interpolatedState.x,
+                interpolatedState.y,
+                interpolatedState.z
+            );
         }
     }
 }

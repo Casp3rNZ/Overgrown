@@ -9,44 +9,36 @@ class Game {
     private scene: Scene;
     public player: PlayerController | null = null;
     private network: NetworkClient;
+    private lastTickTime: number = 0;
+    private readonly TICK_INTERVAL = 1000 / 20;
 
     constructor(private canvas: HTMLCanvasElement) {
         this.engine = new Engine(this.canvas, true);
         this.scene = new Scene(this.engine);
-        this.network = new NetworkClient("ws://localhost:8080"); // Update with your server address
+        this.network = new NetworkClient("ws://localhost:8080");
         this.init();
     }
 
     private async init(): Promise<void> {
         createGameScene(this.scene);
 
-        // Wait for server to assign player ID before creating player
         this.network.onReady = (playerId: string) => {
             this.player = new PlayerController(this.scene, this.network, playerId);
             this.scene.activeCamera = this.player.camera;
+            this.lastTickTime = performance.now();
 
-            let accumulator = 0;
-            const TPS = 1000 / 20;
-            let lastUpdate = performance.now();
+            // Start the network update loop
+            this.startNetworkLoop();
 
+            // Start the render loop
             this.engine.runRenderLoop(() => {
-                const now = performance.now();
-                accumulator += now - lastUpdate;
-                lastUpdate = now;
-                while (accumulator >= TPS) {
-                    if (this.player){
-                        this.player.tick();
-                    }
-                    accumulator -= TPS;
+                if (this.player) {
+                    this.player.updateVisuals();
                 }
-                // Render the scene at the current frame no matter the TPS
-                if (this.scene.activeCamera){
-                    this.scene.render();
-                }
+                this.scene.render();
             });
         };
 
-        // Update all players' positions from server state
         this.network.onState = (players: any) => {
             if (players) {
                 players = { players: players };
@@ -54,10 +46,27 @@ class Game {
             if (this.player) this.player.updateFromServer(players);
         };
 
-        // Handle resize
         window.addEventListener("resize", () => {
             this.engine.resize();
         });
+    }
+
+    private startNetworkLoop(): void {
+        const updateNetwork = () => {
+            const now = performance.now();
+            const delta = now - this.lastTickTime;
+
+            if (delta >= this.TICK_INTERVAL) {
+                if (this.player) {
+                    this.player.tick();
+                }
+                this.lastTickTime = now;
+            }
+
+            requestAnimationFrame(updateNetwork);
+        };
+
+        requestAnimationFrame(updateNetwork);
     }
 }
 
