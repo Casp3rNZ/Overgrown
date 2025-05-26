@@ -9,6 +9,7 @@ export interface PlayerState {
     friction: number;
     strafeAngle: number;
     consecutiveJumps: number;
+    rotationY: number;
 }
 
 export interface PlayerInput {

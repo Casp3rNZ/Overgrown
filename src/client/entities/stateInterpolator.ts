@@ -1,6 +1,7 @@
 export class StateInterpolator {
     private states: Array<{
         position: { x: number; y: number; z: number };
+        rotationY?: number;
         timestamp: number;
     }> = [];
 
@@ -8,9 +9,10 @@ export class StateInterpolator {
     // Keep last 10 states for interpolation
     // anything more seems a little off for 20tps
 
-    public addState(state: { position: { x: number; y: number; z: number } }) {
+    public addState(state: { position: { x: number; y: number; z: number }; rotationY?: number }) {
         this.states.push({
             position: { ...state.position },
+            rotationY: state.rotationY,
             timestamp: performance.now()
         });
 
@@ -20,7 +22,7 @@ export class StateInterpolator {
         }
     }
 
-    public getInterpolatedState(interpolationDelay: number = 100): { x: number; y: number; z: number } | null {
+    public getInterpolatedState(interpolationDelay: number = 100): { position: { x: number; y: number; z: number }; rotationY?: number } | null {
         const now = performance.now();
         const targetTime = now - interpolationDelay;
 
@@ -47,10 +49,18 @@ export class StateInterpolator {
                       (newerState.timestamp - olderState.timestamp);
 
         // Interpolate position
-        return {
-            x: olderState.position.x + (newerState.position.x - olderState.position.x) * factor,
-            y: olderState.position.y + (newerState.position.y - olderState.position.y) * factor,
-            z: olderState.position.z + (newerState.position.z - olderState.position.z) * factor
+        const interpolatedState: { position: { x: number; y: number; z: number }; rotationY?: number } = {
+            position: {
+                x: olderState.position.x + (newerState.position.x - olderState.position.x) * factor,
+                y: olderState.position.y + (newerState.position.y - olderState.position.y) * factor,
+                z: olderState.position.z + (newerState.position.z - olderState.position.z) * factor
+            }
         };
+
+        // Interpolate rotation if both states have it
+        if (olderState.rotationY !== undefined && newerState.rotationY !== undefined) {
+            interpolatedState.rotationY = olderState.rotationY + (newerState.rotationY - olderState.rotationY) * factor;
+        }
+        return interpolatedState;
     }
 } 

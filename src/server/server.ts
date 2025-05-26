@@ -16,19 +16,22 @@ wss.on("connection", (ws) => {
     console.log("New player connected");
     const id = generateId();
 
+    // Initialize player state
     players[id] = {
         position: { x: 0, y: 1.8, z: 0 },
         velocity: { x: 0, y: 0, z: 0 },
-        wishDirection: { x: 0, y: 0, z: 0 },
         moveDirection: { x: 0, y: 0, z: 0 },
+        wishDirection: { x: 0, y: 0, z: 0 },
         isGrounded: false,
         lastJumpTime: 0,
         jumpQueued: false,
         friction: 0,
         strafeAngle: 0,
         consecutiveJumps: 0,
+        rotationY: 0
     };
 
+    // Initialize player input
     inputs[id] = {
         forward: false,
         backward: false,
@@ -43,9 +46,12 @@ wss.on("connection", (ws) => {
             let data = JSON.parse(msg.toString());
             data.input = JSON.parse(data.input);
             if (data.type === "input") {
+                console.log(data.input)
                 inputs[id] = data.input.input;
             }
-        } catch { }
+        } catch (e) {
+            console.error("Error parsing message:", e);
+        }
     });
 
     ws.on("close", () => {
@@ -76,7 +82,11 @@ function startTPSLoop(TPS: number) {
         // Broadcast state
         wss.clients.forEach(client => {
             if (client.readyState === 1) {
-                client.send(JSON.stringify({ type: "state", players: players }));
+                console.log(players)
+                
+                client.send(JSON.stringify({ 
+                    type: "state", 
+                    players: players }));
             }
         });
 
