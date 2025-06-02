@@ -1,3 +1,5 @@
+import { handleCollisions } from "./collision.js";
+
 export interface PlayerState {
     position: { x: number; y: number; z: number; };
     velocity: { x: number; y: number; z: number; };
@@ -10,6 +12,7 @@ export interface PlayerState {
     strafeAngle: number;
     consecutiveJumps: number;
     rotationY: number;
+    correction?: { position: { x: number; y: number; z: number; } };
 }
 
 export interface PlayerInput {
@@ -21,16 +24,16 @@ export interface PlayerInput {
     rotationY: number;
 }
 
-const WALK_SPEED = 6.6;
-const MAX_SPEED = 15;
-const ACCELERATION = 35;
-const AIR_ACCELERATION = 7;
-const FRICTION_GROUND = 2;
-const FRICTION_AIR = 0.5;
-const JUMP_FORCE = 5;
-const GRAVITY = 15.0;
-const MAX_AIR_STRAFES = 10;
-const STRAFE_ANGLE_CHANGE = 0.5;
+const WALK_SPEED = 6.6;      // Max walking speed
+const MAX_SPEED = 15;        // Maximum speed
+const ACCELERATION = 5;      // Ground acceleration
+const AIR_ACCELERATION = 7;  // Air acceleration
+const FRICTION_GROUND = 3;   // Ground friction
+const FRICTION_AIR = 0.5;    // Air friction
+const JUMP_FORCE = 4.5;     // Jump force
+const GRAVITY = 15.24;       // Gravity
+const MAX_AIR_STRAFES = 10;  // Maximum air strafes
+const STRAFE_ANGLE_CHANGE = 0.5; // Air strafe angle change rate
 
 function vec3(x = 0, y = 0, z = 0) {
     return { x, y, z };
@@ -63,7 +66,7 @@ function clamp(val: number, min: number, max: number) {
     return Math.max(min, Math.min(max, val));
 }
 
-export function simulatePlayerMovement(state: PlayerState, input: PlayerInput, dt: number) {
+export function simulatePlayerMovement(state: PlayerState, input: PlayerInput, dt: number, otherPlayers?: { [id: string]: PlayerState }) {
     // Update ground state
     checkGroundContact(state);
 
@@ -85,6 +88,15 @@ export function simulatePlayerMovement(state: PlayerState, input: PlayerInput, d
     state.position.x += state.velocity.x * dt;
     state.position.y += state.velocity.y * dt;
     state.position.z += state.velocity.z * dt;
+
+    // Handle collisions if otherPlayers is provided
+    if (otherPlayers) {
+        const collisionCorrection = handleCollisions(state, otherPlayers);
+        if (collisionCorrection) {
+            state.position = collisionCorrection.position;
+            state.correction = collisionCorrection;
+        }
+    }
 
     // Ground collision check
     if (state.position.y <= 0) {

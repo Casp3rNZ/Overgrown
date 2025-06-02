@@ -29,7 +29,7 @@ export function createGameScene(scene: Scene) {
         height: 3,
         depth: 1,
     }, scene);
-    box.position = new Vector3(5, 0, -5);
+    box.position = new Vector3(5, -1, -5);
     box.checkCollisions = true;
 
     return { ground, box}

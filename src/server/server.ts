@@ -1,5 +1,6 @@
 import { WebSocketServer } from "ws";
 import { simulatePlayerMovement, PlayerState, PlayerInput } from "../shared/movement.js";
+import { handleCollisions } from "../shared/collision.js";
 console.log("Overgrown - WSS listening on ws://localhost:8080");
 
 const wss = new WebSocketServer({ 
@@ -111,17 +112,30 @@ function startTPSLoop(TPS: number) {
 
         // Simulate all players
         for (const id in players) {
+            // Store original position for collision detection
+            const originalPosition = { ...players[id].position };
+            
+            // Simulate movement
             simulatePlayerMovement(players[id], inputs[id], dt);
+            
+            // Handle collisions
+            const collisionCorrection = handleCollisions(players[id], players);
+            if (collisionCorrection) {
+                // Update player position with correction
+                players[id].position = collisionCorrection.position;
+                
+                // Add correction to state for client
+                players[id].correction = collisionCorrection;
+            }
         }
 
         // Broadcast state
         wss.clients.forEach(client => {
             if (client.readyState === 1) {
-                //console.log(players)
-                
                 client.send(JSON.stringify({ 
                     type: "state", 
-                    players: players }));
+                    players: players 
+                }));
             }
         });
 

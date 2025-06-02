@@ -137,6 +137,7 @@ export class Player {
             //console.log("Received state update:", me);
             this.stateInterpolator.addState({
                 position: me.position,
+                velocity: me.velocity,
                 rotationY: me.rotationY
             });
         }
