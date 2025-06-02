@@ -6,6 +6,7 @@ export class PlayerManager {
     private players: Map<string, Player>;
     private scene: Scene;
     private network: NetworkClient;
+    // not sure if this localPlayerID will be useful, or if it should be a boolean, but it works for now.
     private localPlayerId: string | null;
 
     constructor(scene: Scene, network: NetworkClient) {
@@ -43,14 +44,13 @@ export class PlayerManager {
             return;
         }
 
-        console.log("Updating from server state:", players);
+        //console.log("Updating from server state:", players);
 
         // Update or create players based on server state
         for (const [playerId, playerState] of Object.entries(players)) {
             let player = this.players.get(playerId);
-            
+            // Create new player (either local or remote)
             if (!player) {
-                // Create new player (either local or remote)
                 if (playerId === this.localPlayerId) {
                     player = this.createLocalPlayer(playerId);
                 } else {
@@ -59,7 +59,7 @@ export class PlayerManager {
             }
             
             // Update player state
-            console.log(`Updating player ${playerId} with state:`, playerState);
+            //console.log(`Updating player ${playerId} with state:`, playerState);
             player.updateFromServer({ players: { [playerId]: playerState } });
         }
 

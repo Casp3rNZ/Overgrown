@@ -15,7 +15,7 @@ export class Player {
         jump: false,
         rotationY: 0,
     };
-
+    private playerHealth: number;
     private network: NetworkClient;
     private playerId: string;
     private isRemote: boolean;
@@ -27,6 +27,7 @@ export class Player {
         this.stateInterpolator = new StateInterpolator();
         this.createPlayerMesh(scene);
         this.createCamera(scene);
+        this.playerHealth = 100; // Default health
         
         if (!isRemote) {
             this.camera.fov = Tools.ToRadians(90);
@@ -65,7 +66,7 @@ export class Player {
 
     public handleKeyboardInput(event: KeyboardEvent, isDown: boolean): void {
         if (this.isRemote) return; // Remote players don't handle input
-        
+
         //console.log(`Key ${event.keyCode} is ${isDown ? "down" : "up"}`);
         /* Temporary switch to keyCode because for some reason .code wasn't working :shrug: */
         switch (event.keyCode) {
@@ -131,11 +132,9 @@ export class Player {
             console.warn("No players in state:", state);
             return;
         }
-        console.log(state)
         const me = state.players[this.playerId];
         if (me) {
-            console.log("Received state update:", me);
-            // Add the new state to the interpolator instead of directly setting position
+            //console.log("Received state update:", me);
             this.stateInterpolator.addState({
                 position: me.position,
                 rotationY: me.rotationY
@@ -147,7 +146,7 @@ export class Player {
     public updateVisuals(): void {
         const interpolatedState = this.stateInterpolator.getInterpolatedState();
         if (interpolatedState) {
-            console.log("Updating visuals with interpolated state:", interpolatedState);
+            //console.log("Updating visuals with interpolated state:", interpolatedState);
             // Update position
             this.mesh.position.set(
                 interpolatedState.position.x,

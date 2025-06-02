@@ -16,6 +16,17 @@ wss.on("connection", (ws) => {
     console.log("New player connected");
     const id = generateId();
 
+    // broadcast to all clients that a new player has joined
+    wss.clients.forEach(client => {
+        if (client.readyState === 1) {
+                client.send(JSON.stringify({ 
+                type: "chat", 
+                playerId: "SERVER",
+                message: `${id} has joined the game.`
+            }));
+        }
+    });
+
     // Initialize player state
     players[id] = {
         position: { x: 0, y: 1.8, z: 0 },
@@ -44,10 +55,23 @@ wss.on("connection", (ws) => {
     ws.on("message", (msg) => {
         try {
             let data = JSON.parse(msg.toString());
-            data.input = JSON.parse(data.input);
             if (data.type === "input") {
-                console.log(data.input)
-                inputs[id] = data.input.input;
+                const out = JSON.parse(data.input);
+                //console.log(data.input)
+                inputs[id] = out.input;
+            }
+            if (data.type === "chat") {
+                console.log(`Chat from ${id}: ${data.message}`);
+                // Broadcast chat message to all clients
+                wss.clients.forEach(client => {
+                    if (client.readyState === 1) {
+                        client.send(JSON.stringify({ 
+                            type: "chat", 
+                            playerId: data.playerId,
+                            message: data.message
+                        }));
+                    }
+                });
             }
         } catch (e) {
             console.error("Error parsing message:", e);
@@ -58,6 +82,17 @@ wss.on("connection", (ws) => {
         delete players[id];
         delete inputs[id];
         console.log(`Player ${id} disconnected`);
+
+        // Broadcast to all clients that a player has left
+        wss.clients.forEach(client => {
+            if (client.readyState === 1) {
+                client.send(JSON.stringify({ 
+                    type: "chat", 
+                    playerId: "SERVER",
+                    message: `${id} has left the game.`
+                }));
+            }
+        });
     });
 
     // Send the player's ID
@@ -82,7 +117,7 @@ function startTPSLoop(TPS: number) {
         // Broadcast state
         wss.clients.forEach(client => {
             if (client.readyState === 1) {
-                console.log(players)
+                //console.log(players)
                 
                 client.send(JSON.stringify({ 
                     type: "state", 

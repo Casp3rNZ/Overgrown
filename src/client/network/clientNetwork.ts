@@ -1,8 +1,9 @@
 export class NetworkClient {
-    private socket: WebSocket;
+    public socket: WebSocket;
     public playerId: string | null = null;
     public onState: (players: any) => void = () => {};
     public onReady: (playerId: string) => void = () => {};
+    public onChatMessage: (message: string) => void = () => {};
 
     constructor(url: string) {
         this.socket = new WebSocket(url);
@@ -20,6 +21,9 @@ export class NetworkClient {
             }
             if (data.type === "state" && data.players) {
                 this.onState(data.players);
+            }
+            if (data.type === "chat" && data.message) {
+                this.onChatMessage(data);
             }
         };
 
@@ -39,6 +43,15 @@ export class NetworkClient {
             type: "input",
             playerId: this.playerId,
             input: input
+        }));
+    }
+
+    public sendChatMessage(message: any) {
+        if (!this.playerId || this.socket.readyState == 0) return;
+        this.socket.send(JSON.stringify({
+            type: "chat",
+            playerId: this.playerId,
+            message: message
         }));
     }
 }

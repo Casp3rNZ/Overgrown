@@ -3,12 +3,15 @@ import { Scene } from "@babylonjs/core/scene";
 import { createGameScene } from "./scenes/testGameScene";
 import { NetworkClient } from "./network/clientNetwork";
 import { PlayerManager } from "./entities/playerManager";
+import { ChatManager } from "./network/chatManager";
 
 class Game {
+    // Handles all client side game loops
     private engine: Engine;
     private scene: Scene;
     public playerManager: PlayerManager;
-    private network: NetworkClient;
+    public chatManager: ChatManager;
+    public network: NetworkClient;
     private lastTickTime: number = 0;
     private readonly TICK_INTERVAL = 1000 / 20;
 
@@ -17,6 +20,7 @@ class Game {
         this.scene = new Scene(this.engine);
         this.network = new NetworkClient("ws://localhost:8080");
         this.playerManager = new PlayerManager(this.scene, this.network);
+        this.chatManager = new ChatManager(this.network);
         this.init();
     }
 
@@ -28,18 +32,22 @@ class Game {
             this.scene.activeCamera = localPlayer.camera;
             this.lastTickTime = performance.now();
 
-            // Start the network update loop
             this.startNetworkLoop();
 
-            // Start the render loop
             this.engine.runRenderLoop(() => {
                 this.playerManager.updateVisuals();
                 this.scene.render();
             });
         };
 
+        // handle updated player states from server
         this.network.onState = (state: any) => {
             this.playerManager.updateFromServer(state);
+        };
+
+        // handle chat messages from server
+        this.network.onChatMessage = (data: any) => {
+            this.chatManager.handleNewChatMessage(data);
         };
 
         window.addEventListener("resize", () => {
@@ -48,6 +56,8 @@ class Game {
     }
 
     private startNetworkLoop(): void {
+        // Kind of hacky way to run max fps with 20 server TPS.
+        // Unsure how to handle this better, especially with optional V-sync and other video settings.
         const updateNetwork = () => {
             const now = performance.now();
             const delta = now - this.lastTickTime;
@@ -72,6 +82,7 @@ export default Game;
 window.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
     const game = new Game(canvas);
+    const chatInput = document.getElementById("chat-input") as HTMLInputElement;
 
     canvas.addEventListener("click", () => {
         canvas.requestPointerLock();
@@ -83,15 +94,43 @@ window.addEventListener("DOMContentLoaded", () => {
             console.log("Pointer unlocked");
         }
     }, false);
+    // Handle Escape key to exit pointer lock
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
             document.exitPointerLock();
         }
     }, false);
+
+    // Handle keyboard input for game controls and chat
     document.addEventListener("keydown", (event) => {
         const localPlayer = game.playerManager.getLocalPlayer();
-        if (document.pointerLockElement === canvas && localPlayer) {
+        const chatInput = document.getElementById("chat-input") as HTMLInputElement;
+        if (event.key !== "Enter" && document.pointerLockElement === canvas && localPlayer) {
+            // Game controls
+            console.log("Key pressed:", event.key);
             localPlayer.handleKeyboardInput(event, true);
+        }else if (event.key === "Enter" && document.pointerLockElement === canvas && localPlayer) {
+            // Open chat
+            console.log("Enter pressed in chat input");
+            const chatInput = document.getElementById("chat-input") as HTMLInputElement;
+            chatInput.focus();
+            if (document.exitPointerLock) document.exitPointerLock();
+        }
+    });
+
+    // Handle chat input submission
+    chatInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            const message = chatInput.value.trim();
+            if (message.length > 0 && game.chatManager) {
+                game.network.sendChatMessage(message);
+                chatInput.value = "";
+                canvas.focus();
+                if (canvas.requestPointerLock) {
+                    canvas.requestPointerLock();
+                }
+            }
         }
     });
     document.addEventListener("keyup", (event) => {
