@@ -1,5 +1,4 @@
 # Overgrown
-### A web based, Multiplayer, Extraction Shooter, FPS Game
 #### Currently very early in development
 
 ##### Demo video:
