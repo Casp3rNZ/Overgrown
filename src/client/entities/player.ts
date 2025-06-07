@@ -1,8 +1,8 @@
+import "@babylonjs/loaders/glTF";
 import { Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools, AnimationGroup, ImportMeshAsync, AbstractMesh } from "@babylonjs/core";
 import { PlayerInput, PlayerState } from "../../shared/movement";
 import { NetworkClient } from "../network/clientNetwork";
 import { StateInterpolator } from "./stateInterpolator";
-import "@babylonjs/loaders/glTF";
 
 export class Player {
     public playerModel: AbstractMesh;
@@ -48,7 +48,7 @@ export class Player {
 
     private async createplayerModel(scene: Scene): Promise<void> {
         // Load GLB model and parent to collision mesh
-        const result = await ImportMeshAsync("/assets/testPlayer.glb", scene);
+        const result = await ImportMeshAsync("/testPlayer.glb", scene);
         this.playerModel = result.meshes[0];
         this.playerModel.parent = this.collisionMesh;
         this.playerModel.position = new Vector3(0, -1, 0);
@@ -188,7 +188,6 @@ export class Player {
 
                 // Update grounded state
                 this.isGrounded = me.isGrounded;
-                console.log(`Remote player ${this.playerId} is grounded: ${this.isGrounded}`);
             }
         }
     }

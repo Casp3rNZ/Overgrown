@@ -29,7 +29,7 @@ const MAX_SPEED = 15;        // Maximum speed
 const ACCELERATION = 3;      // Ground acceleration
 const AIR_ACCELERATION = 2;  // Air acceleration
 const FRICTION_GROUND = 5;   // Ground friction
-const FRICTION_AIR = 2;    // Air friction
+const FRICTION_AIR = 0.5;    // Air friction
 const JUMP_FORCE = 4.5;     // Jump force
 const GRAVITY = 15.24;       // Gravity
 const MAX_AIR_STRAFES = 10;  // Maximum air strafes
@@ -259,6 +259,11 @@ function applyAirStrafing(state: PlayerState, dt: number): void {
             y: 0,
             z: Math.cos(state.strafeAngle)
         };
+
+        // Apply air friction
+        const airFriction = FRICTION_AIR * dt;
+        state.velocity.x *= (1 - airFriction);
+        state.velocity.z *= (1 - airFriction);
 
         const strafeForce = 0.5 * AIR_ACCELERATION * dt;
         state.velocity.x += strafeDir.x * strafeForce;

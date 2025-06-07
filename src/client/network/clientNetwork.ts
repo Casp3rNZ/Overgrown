@@ -1,5 +1,5 @@
 export class NetworkClient {
-    private socket: WebSocket | null = null;
+    public socket: WebSocket | null = null;
     private url: string;
     private reconnectAttempts: number = 0;
     private maxReconnectAttempts: number = 5;

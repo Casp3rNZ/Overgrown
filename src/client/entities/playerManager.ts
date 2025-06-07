@@ -65,7 +65,12 @@ export class PlayerManager {
         // Remove players that are no longer in the server state
         for (const [playerId, player] of this.players.entries()) {
             if (playerId !== this.localPlayerId && !players[playerId]) {
-                player.playerModel.dispose();
+                if (player.collisionMesh) {
+                    player.collisionMesh.dispose();
+                }
+                if (player.playerModel) {
+                    player.playerModel.dispose();
+                }
                 if (player.camera) {
                     player.camera.dispose();
                 }
@@ -89,11 +94,15 @@ export class PlayerManager {
 
     public dispose(): void {
         for (const player of this.players.values()) {
-            player.playerModel.dispose();
             if (player.camera) {
                 player.camera.dispose();
             }
-            player.collisionMesh.dispose();
+            if (player.collisionMesh) {
+                player.collisionMesh.dispose();
+            }
+            if (player.playerModel) {
+                player.playerModel.dispose();
+            }
         }
         this.players.clear();
     }
