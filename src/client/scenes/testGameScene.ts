@@ -1,4 +1,4 @@
-import {Scene, MeshBuilder, StandardMaterial, Color3, Vector3, GroundMesh, AbstractMesh, DirectionalLight, Color4 } from "@babylonjs/core";
+import {Scene, MeshBuilder, StandardMaterial, Color3, Vector3, DirectionalLight, Color4 } from "@babylonjs/core";
 
 export function createGameScene(scene: Scene) {
 
@@ -29,7 +29,7 @@ export function createGameScene(scene: Scene) {
         height: 3,
         depth: 1,
     }, scene);
-    box.position = new Vector3(5, -1, -5);
+    box.position = new Vector3(5, 1, -5);
     box.checkCollisions = true;
 
     return { ground, box}

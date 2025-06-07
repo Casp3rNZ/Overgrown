@@ -11,8 +11,8 @@ export interface PlayerState {
     friction: number;
     strafeAngle: number;
     consecutiveJumps: number;
-    rotationY: number;
     correction?: { position: { x: number; y: number; z: number; } };
+    input: PlayerInput;
 }
 
 export interface PlayerInput {
@@ -26,10 +26,10 @@ export interface PlayerInput {
 
 const WALK_SPEED = 6.6;      // Max walking speed
 const MAX_SPEED = 15;        // Maximum speed
-const ACCELERATION = 5;      // Ground acceleration
-const AIR_ACCELERATION = 7;  // Air acceleration
-const FRICTION_GROUND = 3;   // Ground friction
-const FRICTION_AIR = 0.5;    // Air friction
+const ACCELERATION = 3;      // Ground acceleration
+const AIR_ACCELERATION = 2;  // Air acceleration
+const FRICTION_GROUND = 5;   // Ground friction
+const FRICTION_AIR = 2;    // Air friction
 const JUMP_FORCE = 4.5;     // Jump force
 const GRAVITY = 15.24;       // Gravity
 const MAX_AIR_STRAFES = 10;  // Maximum air strafes
@@ -66,15 +66,15 @@ function clamp(val: number, min: number, max: number) {
     return Math.max(min, Math.min(max, val));
 }
 
-export function simulatePlayerMovement(state: PlayerState, input: PlayerInput, dt: number, otherPlayers?: { [id: string]: PlayerState }) {
+export function simulatePlayerMovement(state: PlayerState, dt: number, otherPlayers?: { [id: string]: PlayerState }) {
     // Update ground state
     checkGroundContact(state);
 
     // Handle jumping
-    handleJumping(state, input.jump, dt);
+    handleJumping(state, dt);
 
     // Calculate movement direction based on rotation
-    calculateWishDirection(state, input);
+    calculateWishDirection(state);
 
     // Apply movement physics
     applyMovementPhysics(state, dt);
@@ -108,7 +108,7 @@ export function simulatePlayerMovement(state: PlayerState, input: PlayerInput, d
 }
 
 function checkGroundContact(state: PlayerState): void {
-    const groundThreshold = 0.15;
+    const groundThreshold = 0.5;
     state.isGrounded = state.position.y <= groundThreshold;
     
     if (state.isGrounded) {
@@ -116,9 +116,9 @@ function checkGroundContact(state: PlayerState): void {
     }
 }
 
-function handleJumping(state: PlayerState, jumpPressed: boolean, dt: number): void {
+function handleJumping(state: PlayerState, dt: number): void {
     // Queue jump if pressed right before landing
-    if (jumpPressed && !state.jumpQueued) {
+    if (state.input.jump && !state.jumpQueued) {
         state.jumpQueued = true;
         setTimeout(() => {
             state.jumpQueued = false;
@@ -140,37 +140,37 @@ function handleJumping(state: PlayerState, jumpPressed: boolean, dt: number): vo
     }
 }
 
-function calculateWishDirection(state: PlayerState, input: PlayerInput): void {
+function calculateWishDirection(state: PlayerState): void {
     // Get forward vector based on rotation
     const forward = {
-        x: Math.sin(input.rotationY),
+        x: Math.sin(state.input.rotationY),
         y: 0,
-        z: Math.cos(input.rotationY)
+        z: Math.cos(state.input.rotationY)
     };
 
     // Get right vector based on rotation
     const right = {
-        x: Math.sin(input.rotationY + Math.PI/2),
+        x: Math.sin(state.input.rotationY + Math.PI/2),
         y: 0,
-        z: Math.cos(input.rotationY + Math.PI/2)
+        z: Math.cos(state.input.rotationY + Math.PI/2)
     };
 
     // Calculate wish direction based on input
     state.wishDirection = { x: 0, y: 0, z: 0 };
     
-    if (input.forward) {
+    if (state.input.forward) {
         state.wishDirection.x += forward.x;
         state.wishDirection.z += forward.z;
     }
-    if (input.backward) {
+    if (state.input.backward) {
         state.wishDirection.x -= forward.x;
         state.wishDirection.z -= forward.z;
     }
-    if (input.left) {
+    if (state.input.left) {
         state.wishDirection.x -= right.x;
         state.wishDirection.z -= right.z;
     }
-    if (input.right) {
+    if (state.input.right) {
         state.wishDirection.x += right.x;
         state.wishDirection.z += right.z;
     }

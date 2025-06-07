@@ -40,26 +40,22 @@ wss.on("connection", (ws) => {
         friction: 0,
         strafeAngle: 0,
         consecutiveJumps: 0,
-        rotationY: 0
-    };
-
-    // Initialize player input
-    inputs[id] = {
-        forward: false,
-        backward: false,
-        left: false,
-        right: false,
-        jump: false,
-        rotationY: 0
+        input: {
+            forward: false,
+            backward: false,
+            left: false,
+            right: false,
+            jump: false,
+            rotationY: 0
+        }
     };
 
     ws.on("message", (msg) => {
         try {
             let data = JSON.parse(msg.toString());
             if (data.type === "input") {
-                const out = JSON.parse(data.input);
                 //console.log(data.input)
-                inputs[id] = out.input;
+                players[id].input = data.input;
             }
             if (data.type === "chat") {
                 console.log(`Chat from ${id}: ${data.message}`);
@@ -81,7 +77,6 @@ wss.on("connection", (ws) => {
 
     ws.on("close", () => {
         delete players[id];
-        delete inputs[id];
         console.log(`Player ${id} disconnected`);
 
         // Broadcast to all clients that a player has left
@@ -112,11 +107,8 @@ function startTPSLoop(TPS: number) {
 
         // Simulate all players
         for (const id in players) {
-            // Store original position for collision detection
-            const originalPosition = { ...players[id].position };
-            
             // Simulate movement
-            simulatePlayerMovement(players[id], inputs[id], dt);
+            simulatePlayerMovement(players[id], dt);
             
             // Handle collisions
             const collisionCorrection = handleCollisions(players[id], players);

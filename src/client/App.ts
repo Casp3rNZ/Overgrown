@@ -107,11 +107,9 @@ window.addEventListener("DOMContentLoaded", () => {
         const chatInput = document.getElementById("chat-input") as HTMLInputElement;
         if (event.key !== "Enter" && document.pointerLockElement === canvas && localPlayer) {
             // Game controls
-            console.log("Key pressed:", event.key);
             localPlayer.handleKeyboardInput(event, true);
         }else if (event.key === "Enter" && document.pointerLockElement === canvas && localPlayer) {
             // Open chat
-            console.log("Enter pressed in chat input");
             const chatInput = document.getElementById("chat-input") as HTMLInputElement;
             chatInput.focus();
             if (document.exitPointerLock) document.exitPointerLock();

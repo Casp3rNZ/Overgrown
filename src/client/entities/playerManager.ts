@@ -59,14 +59,13 @@ export class PlayerManager {
             }
             
             // Update player state
-            //console.log(`Updating player ${playerId} with state:`, playerState);
-            player.updateFromServer({ players: { [playerId]: playerState } });
+            player.updateFromServer({ player: { [playerId]: playerState } });
         }
 
         // Remove players that are no longer in the server state
         for (const [playerId, player] of this.players.entries()) {
             if (playerId !== this.localPlayerId && !players[playerId]) {
-                player.mesh.dispose();
+                player.playerModel.dispose();
                 if (player.camera) {
                     player.camera.dispose();
                 }
@@ -90,10 +89,11 @@ export class PlayerManager {
 
     public dispose(): void {
         for (const player of this.players.values()) {
-            player.mesh.dispose();
+            player.playerModel.dispose();
             if (player.camera) {
                 player.camera.dispose();
             }
+            player.collisionMesh.dispose();
         }
         this.players.clear();
     }

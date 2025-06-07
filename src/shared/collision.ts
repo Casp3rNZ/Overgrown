@@ -9,10 +9,10 @@ export interface CollisionObject {
 // Define collision boxes for static objects
 export const staticColliders: CollisionObject[] = [
     // Ground
-    {
-        position: { x: 0, y: -2, z: 0 },
-        size: { width: 100, height: 1, depth: 100 }
-    },
+    // {
+    //     position: { x: 0, y: -1, z: 0 },
+    //     size: { width: 100, height: 0, depth: 100 }
+    // },
     // Box
     {
         position: { x: 5, y: -1, z: -5 },
