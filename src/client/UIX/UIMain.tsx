@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { ChatBox } from "./chatBox";
+import { Crosshair } from "./crosshair";
 import Game from "../App";
-import { h, render } from "preact";
+import { render } from "preact";
 
 export function UIRoot({ game }) {
     const [chatVisible, setChatVisible] = useState(true);
@@ -96,6 +97,7 @@ export function UIRoot({ game }) {
 
     return (
     <div>
+        <Crosshair />
         <ChatBox
             messages={messages}
             onSend={handleChatSend}

@@ -3,6 +3,7 @@ import { Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools, AnimationGroup, I
 import { PlayerInput, PlayerState } from "../../shared/movement";
 import { NetworkClient } from "../network/clientNetwork";
 import { StateInterpolator } from "./stateInterpolator";
+import { ViewModel } from "./viewModel";
 
 export class Player {
     public playerModel: AbstractMesh;
@@ -11,6 +12,7 @@ export class Player {
     private currentAnimation: string = "";
     public camera: FreeCamera;
     private stateInterpolator: StateInterpolator;
+    private viewModel: ViewModel | null = null;
     private input: PlayerInput = {
         forward: false,
         backward: false,
@@ -35,20 +37,20 @@ export class Player {
         this.playerHealth = 100; // Default health
         
         if (!isRemote) {
+            this.createCamera(scene);
             this.camera.fov = Tools.ToRadians(90);
             this.camera.minZ = 0.1;
             this.setupMouseInput(scene);
+            this.viewModel = new ViewModel(scene, this.camera);
+            this.viewModel.loadGunModel("colt")
         } else {
             this.createplayerModel(scene)
-            // For remote players, we don't need the camera to be functional
-            this.camera.dispose();
-            this.camera = null;
         }
     }
 
     private async createplayerModel(scene: Scene): Promise<void> {
         // Load GLB model and parent to collision mesh
-        const result = await ImportMeshAsync("/testPlayer.glb", scene);
+        const result = await ImportMeshAsync("/assets/playerModels/testPlayer.glb", scene);
         this.playerModel = result.meshes[0];
         this.playerModel.parent = this.collisionMesh;
         this.playerModel.position = new Vector3(0, -1, 0);
@@ -129,22 +131,17 @@ export class Player {
         window.addEventListener("mousemove", (event) => {
             if (document.pointerLockElement === scene.getEngine().getRenderingCanvas()) {
                 const sensitivity = 0.002;
-                if (this.playerModel){
-                    // yaw left/right
-                    this.playerModel.rotation.y += event.movementX * sensitivity;
+                // yaw left/right
+                if (this.collisionMesh) {
+                    this.collisionMesh.rotation.y += event.movementX * sensitivity;
                 }
+
                 if (this.camera){
                     // pitch up/down
                     this.camera.rotation.x += event.movementY * sensitivity;
                     // Clamp pitch to avoid flipping
                     this.camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotation.x));
                 }
-
-                // Update collision mesh rotation to follow player model
-                if (this.collisionMesh) {
-                    this.collisionMesh.rotation.y += event.movementX * sensitivity;
-                }
-
                 // update input rotation
                 this.input.rotationY = this.collisionMesh.rotation.y;
             }
