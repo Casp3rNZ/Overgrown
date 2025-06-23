@@ -26,6 +26,7 @@ export function UIRoot({ game }) {
             canvas.requestPointerLock();
         };
         canvas.addEventListener("click", handleCanvasClick);
+        
         const handlePointerLockChange = () => {
             if (document.pointerLockElement === canvas) {
                 console.log("Pointer locked");
@@ -34,6 +35,7 @@ export function UIRoot({ game }) {
             }
         };
         document.addEventListener("pointerlockchange", handlePointerLockChange);
+
         const handleEscape = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
                 document.exitPointerLock();

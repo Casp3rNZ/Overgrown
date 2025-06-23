@@ -1,13 +1,20 @@
 import { WebSocketServer } from "ws";
 import { simulatePlayerMovement, PlayerState, PlayerInput } from "../shared/movement.js";
 import { handleCollisions } from "../shared/collision.js";
+import { Vector3, Ray } from "@babylonjs/core";
 console.log("Overgrown - WSS listening on ws://localhost:8080");
+
+// Currently all connected players state is stored in memory, and updated every call from the client.
+
+// All movement and collision logic is handled with vector math and raycasting. (not really using a physics engine).
+// The movement system has a custom physics simulation that aims to replicate Quake / CS:GO style movement.
+// All other props will be handled with Cannon.js or a similar physics engine (to be implemented).
+// Colyseus or similar will be used for authoritative server state and player management (to be implemented).
 
 const wss = new WebSocketServer({ 
     port: 8080 
 });
 var players: Record<string, PlayerState> = {};
-var inputs: Record<string, PlayerInput> = {};
 
 function generateId() {
     return Math.random().toString(36).substr(2, 9);
@@ -19,7 +26,7 @@ wss.on("connection", (ws) => {
 
     // broadcast to all clients that a new player has joined
     wss.clients.forEach(client => {
-        if (client.readyState === 1) {
+        if (client.readyState == 1) {
                 client.send(JSON.stringify({ 
                 type: "chat", 
                 playerId: "SERVER",
@@ -47,17 +54,17 @@ wss.on("connection", (ws) => {
             right: false,
             jump: false,
             rotationY: 0
-        }
+        },
+        health: 100, // Default health
     };
 
     ws.on("message", (msg) => {
         try {
             let data = JSON.parse(msg.toString());
-            if (data.type === "input") {
-                //console.log(data.input)
+            if (data.type == "input") {
                 players[id].input = data.input;
             }
-            if (data.type === "chat") {
+            if (data.type == "chat") {
                 console.log(`Chat from ${id}: ${data.message}`);
                 // Broadcast chat message to all clients
                 wss.clients.forEach(client => {
@@ -70,6 +77,9 @@ wss.on("connection", (ws) => {
                     }
                 });
             }
+            if (data.type == "shoot") {
+                handlePlayerHitDetection(id, data.position, data.direction);
+            }
         } catch (e) {
             console.error("Error parsing message:", e);
         }
@@ -81,7 +91,7 @@ wss.on("connection", (ws) => {
 
         // Broadcast to all clients that a player has left
         wss.clients.forEach(client => {
-            if (client.readyState === 1) {
+            if (client.readyState == 1) {
                 client.send(JSON.stringify({ 
                     type: "chat", 
                     playerId: "SERVER",
@@ -123,7 +133,7 @@ function startTPSLoop(TPS: number) {
 
         // Broadcast state
         wss.clients.forEach(client => {
-            if (client.readyState === 1) {
+            if (client.readyState == 1) {
                 client.send(JSON.stringify({ 
                     type: "state", 
                     players: players 
@@ -139,4 +149,70 @@ function startTPSLoop(TPS: number) {
     setTimeout(tick, tickDelay);
 }
 
+function handlePlayerHitDetection(
+    playerId: string, 
+    position: { x: number, y: number, z: number }, 
+    direction: { x: number, y: number, z: number 
+    }) {
+
+    const shooter = players[playerId];
+    if (!shooter) return;
+
+    const rayLength = 100; // 100 unit bullet range
+
+    const ray = new Ray(
+        new Vector3(position.x, position.y, position.z), 
+        new Vector3(direction.x, direction.y, direction.z).normalize(), 
+        rayLength
+    )
+
+    let closestHit = null;
+    let closestDistance = Infinity;
+
+    for (const [id, target] of Object.entries(players)) {
+        if (id === playerId) continue; // Don't hit self
+
+        // hard-coded capsule values for collision mesh to match player.ts, will replace with detailed mesh eventually.
+        // Check if ray intersects with player bounding box.
+        // player capsule is roughly 0.5 wide, 1.8 tall, and 0.5 deep (not accounting for edges because Babylon doesnt have builtin capsule hit detection).
+        const minBound = new Vector3(target.position.x - 0.5, target.position.y - 0.9, target.position.z - 0.5);
+        const maxBound = new Vector3(target.position.x + 0.5, target.position.y + 0.9, target.position.z + 0.5);
+        const intersection = ray.intersectsBoxMinMax(minBound, maxBound);
+        console.log(`Hit check for player ${id}: min=${JSON.stringify(minBound)}, max=${JSON.stringify(maxBound)}, intersection=${intersection}`);
+        if (intersection) {
+                console.log(`Player ${playerId} hit player ${id} at position ${JSON.stringify(target.position)}`);
+                const distance = Math.sqrt(
+                Math.pow(target.position.x - position.x, 2) +
+                Math.pow(target.position.y - position.y, 2) +
+                Math.pow(target.position.z - position.z, 2)
+            );
+            if (distance < closestDistance) {
+                closestHit = id;
+                closestDistance = distance;
+            }
+        }
+
+    }
+
+    if (closestHit) {
+        console.log(`Player ${playerId} hit player ${closestHit}`)
+
+        const hitPlayer = players[closestHit];
+        // could do check for collider type here for use with different entities, but for now this works.
+        
+        const hitDamage = 10; // generic, will replace with per weapon damage when equipped weapon is added to playerstate.
+        // send hit back to clients
+        wss.clients.forEach(client => {
+            if (client.readyState == 1) { // not built yet on the client side.
+                client.send(JSON.stringify({
+                    type: "hit",
+                    playerId: closestHit,
+                    damage: hitDamage
+                }));
+            }
+        });
+    }
+}
+
+// Start the game loop with 20 TPS
 startTPSLoop(20);
