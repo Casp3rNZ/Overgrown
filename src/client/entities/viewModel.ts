@@ -88,6 +88,16 @@ export class ViewModel {
         );
     }
 
+    public shoot(): any {
+        if (!this.gunMesh) {
+            console.warn("No gun mesh loaded to shoot.");
+            return false
+        }
+
+        // perform client side animation for shooting
+        return true;
+    }
+
     dispose(): void {
         this.gunMesh.dispose();
         this.gunMesh = null;

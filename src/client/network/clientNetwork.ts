@@ -85,6 +85,16 @@ export class NetworkClient {
         }));
     }
 
+    public sendShootRequest(position: any, direction: any) {
+        if (!this.playerId || !this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: "shoot",
+            playerId: this.playerId,
+            position: position,
+            direction: direction
+        }));
+    }
+
     public sendChatMessage(message: any) {
         if (!this.playerId || !this.socket || this.socket.readyState !== WebSocket.OPEN) return;
         this.socket.send(JSON.stringify({

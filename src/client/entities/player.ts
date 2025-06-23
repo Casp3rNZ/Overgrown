@@ -22,7 +22,6 @@ export class Player {
         rotationY: 0,
     };
     public isGrounded: boolean = true;
-    private playerHealth: number;
     private network: NetworkClient;
     private playerId: string;
     private isRemote: boolean;
@@ -34,7 +33,6 @@ export class Player {
         this.stateInterpolator = new StateInterpolator();
         this.createPlayerCollisionMesh(scene);
         this.createCamera(scene);
-        this.playerHealth = 100; // Default health
         
         if (!isRemote) {
             this.createCamera(scene);
@@ -100,28 +98,34 @@ export class Player {
         //this.camera.ellipsoid = new Vector3(0.5, 0.5, 0.5);
     }
 
-    public handleKeyboardInput(event: KeyboardEvent, isDown: boolean): void {
+    public handleKeyboardInput(event: KeyboardEvent): void {
         if (this.isRemote) return; // Remote players don't handle input
+        let keyType = null;
+        if (event.type === "keydown") {
+            keyType = true;
+        } else if (event.type === "keyup") {
+            keyType = false;
+        } else {
+            return; // Not a key event we handle
+        }
 
-        //console.log(`Key ${event.keyCode} is ${isDown ? "down" : "up"}`);
-        /* Temporary switch to keyCode because for some reason .code wasn't working :shrug: */
-        switch (event.keyCode) {
-            case 87:
-                this.input.forward = isDown;
+        switch (event.key) {
+            case "w":
+                this.input.forward = keyType;
                 break;
-            case 83:
-                this.input.backward = isDown;
+            case "s":
+                this.input.backward = keyType;
                 break;
-            case 65:
-                this.input.left = isDown;
+            case "a":
+                this.input.left = keyType;
                 break;
-            case 68:
-                this.input.right = isDown;
+            case "d":
+                this.input.right = keyType;
                 break;
-            case 32:
-                this.input.jump = isDown;
+            case " ":
+                this.input.jump = keyType;
                 break;
-            default: break;
+            case "1":
         }
     }
 
@@ -146,6 +150,21 @@ export class Player {
                 this.input.rotationY = this.collisionMesh.rotation.y;
             }
         });
+
+        window.addEventListener("mousedown", (event) => {
+            if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
+                if(event.button == 0 && this.viewModel) { // Left mouse button
+                    // request client side shot, if returned true, send to server 
+                    if (this.viewModel.shoot()) {
+                        let directionVector = this.getDirectionFromRotation(this.collisionMesh.rotation.y, this.camera.rotation.x);
+                        console.log("Shooting in direction:", directionVector);
+                        this.network.sendShootRequest(this.camera.position, directionVector);
+                    }
+                }
+            }
+        });
+
+        // not handling mouseup input / full auto for now.
     }
 
     // Called every frame
@@ -216,5 +235,19 @@ export class Player {
         }else {
             this.playAnimation("idle");
         }
+    }
+
+    private getDirectionFromRotation(yaw: number, pitch: number): Vector3 {
+        // yaw: rotation around Y axis (left/right)
+        // pitch: rotation around X axis (up/down)
+        const x = Math.cos(yaw) * Math.cos(pitch);
+        const y = Math.sin(pitch);
+        const z = Math.sin(yaw) * Math.cos(pitch);
+
+        const length = Math.sqrt(x * x + y * y + z * z);
+        return new Vector3(
+            x / length, 
+            y / length, 
+            z / length);
     }
 }

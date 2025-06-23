@@ -13,6 +13,8 @@ export interface PlayerState {
     consecutiveJumps: number;
     correction?: { position: { x: number; y: number; z: number; } };
     input: PlayerInput;
+    equippedItem?: string; // Optional, for future use
+    health: number;
 }
 
 export interface PlayerInput {
