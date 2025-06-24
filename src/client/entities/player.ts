@@ -117,13 +117,21 @@ export class Player {
                 break;
             case "s":
                 this.input.backward = keyType;
+            case "s":
+                this.input.backward = keyType;
                 break;
+            case "a":
+                this.input.left = keyType;
             case "a":
                 this.input.left = keyType;
                 break;
             case "d":
                 this.input.right = keyType;
+            case "d":
+                this.input.right = keyType;
                 break;
+            case " ":
+                this.input.jump = keyType;
             case " ":
                 this.input.jump = keyType;
                 break;
@@ -151,6 +159,21 @@ export class Player {
                 this.input.rotationY = this.collisionMesh.rotation.y;
             }
         });
+
+        window.addEventListener("mousedown", (event) => {
+            if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
+                if(event.button == 0 && this.viewModel) { // Left mouse button
+                    // request client side shot, if returned true, send to server 
+                    if (this.viewModel.shoot()) {
+                        let directionVector = this.getDirectionFromRotation(this.collisionMesh.rotation.y, this.camera.rotation.x);
+                        console.log("Shooting in direction:", directionVector);
+                        this.network.sendShootRequest(this.camera.position, directionVector);
+                    }
+                }
+            }
+        });
+
+        // not handling mouseup input / full auto for now.
 
         window.addEventListener("mousedown", (event) => {
             if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
