@@ -11,6 +11,7 @@ export class Player {
     private playerAnimations: { [name: string]: AnimationGroup } = {};
     private currentAnimation: string = "";
     public camera: FreeCamera;
+    private scene: Scene;
     private stateInterpolator: StateInterpolator;
     private viewModel: ViewModel | null = null;
     private input: PlayerInput = {
@@ -28,6 +29,7 @@ export class Player {
 
     constructor(scene: Scene, network: NetworkClient, playerId: string, isRemote: boolean = false) {
         this.playerId = playerId;
+        this.scene = scene;
         this.network = network;
         this.isRemote = isRemote;
         this.stateInterpolator = new StateInterpolator();
@@ -125,7 +127,6 @@ export class Player {
             case " ":
                 this.input.jump = keyType;
                 break;
-            case "1":
         }
     }
 
@@ -219,6 +220,11 @@ export class Player {
                 interpolatedState.position.y,
                 interpolatedState.position.z
             );
+        }        // Update viewmodel bobbing for local player
+        if (!this.isRemote && this.viewModel) {
+            const isMoving = this.input.forward || this.input.backward || this.input.left || this.input.right;
+            const deltaTime = this.scene.getEngine().getDeltaTime() / 1000; // Convert to seconds
+            this.viewModel.update(isMoving, deltaTime);
         }
         // Update animation state
         // not optimal, but works for now

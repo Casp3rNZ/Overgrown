@@ -5,14 +5,14 @@ export class ViewModel {
 
     // Viewmodel vars
     viewmodel_offset_x: number = 0.2; // X offset for gun model
-    viewmodel_offset_y: number = -0.1; // Y offset for gun model
+    viewmodel_offset_y: number = -0.12; // Y offset for gun model
     viewmodel_offset_z: number = 0.2; // Z offset for gun model
 
     // Bobbing vars
-    cl_bob_lower_amt: number = 0.1; // Lower amount for bobbing
-    cl_bobamt_lat: number = 0.1; // Lateral bobbing amount
-    cl_bobamt_vert: number = 0.1; // Vertical bobbing amount
-    cl_bobcycle: number = 0.5; // Cycle time for bobbing
+    cl_bob_lower_amt: number = 0.01; // Lower amount for bobbing
+    cl_bobamt_lat: number = 0.01; // Lateral bobbing amount
+    cl_bobamt_vert: number = 0.001; // Vertical bobbing amount
+    cl_bobcycle: number = 5; // Cycle time for bobbing
     private bobTime: number = 0; // Time accumulator for bobbing
 
     // TODO: create bobbing/FOV presets for different weapons and user settings
@@ -71,20 +71,24 @@ export class ViewModel {
     // Called every client side frame
     public update(isMoving: boolean, deltaTime: number) {
         if (!this.gunMesh) return;
+        // Update gun bobbing effect based on movement
         if (isMoving) {
-            this.bobTime += deltaTime * this.cl_bobcycle * Math.PI * 2;
-        } else {
+            this.bobTime += deltaTime * this.cl_bobcycle;
+            console.log("Bobbing time updated:", this.bobTime);
+        }else {
+            // Reset bob time when not moving
             this.bobTime = 0;
+            // Need to find a solution to smooth this, because bobtime -= 1 doesnt work.
         }
 
-        const bobX = Math.sin(this.bobTime) * this.cl_bobamt_lat;
+        const bobZ = Math.sin(this.bobTime) * this.cl_bobamt_lat;
         const bobY = Math.abs(Math.cos(this.bobTime)) * this.cl_bobamt_vert;
         const lower = isMoving ? this.cl_bob_lower_amt * 0.01 : 0;
 
         this.gunMesh.position = new Vector3(
-            this.viewmodel_offset_x + bobX,
+            this.viewmodel_offset_x,
             this.viewmodel_offset_y - lower + bobY,
-            this.viewmodel_offset_z
+            this.viewmodel_offset_z + bobZ
         );
     }
 
@@ -95,6 +99,7 @@ export class ViewModel {
         }
 
         // perform client side animation for shooting
+        
         return true;
     }
 
