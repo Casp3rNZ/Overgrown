@@ -11,11 +11,6 @@ interface Equipable {
         collisionGroup?: number; // for babylon
         collisionMask?: number; // also for babylon, but might become obsolete (idk yet)
     };
-}
-
-export interface Gun extends Equipable {
-    // in development currently
-    type: "gun";
     viewmodel: {
         offset_x: number;
         offset_y: number;
@@ -25,6 +20,11 @@ export interface Gun extends Equipable {
         bob_amt_vert: number;
         bob_lower_amt: number;
     }
+}
+
+export interface Gun extends Equipable {
+    // in development currently
+    type: "gun";
     stats: {
         damage: number;
         range: number;

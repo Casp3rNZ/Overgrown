@@ -3,8 +3,7 @@ import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION.js";
 export class ViewModel {
     public gunMesh: AbstractMesh | null = null;
     private bobTime: number = 0;
-
-    // TODO: create bobbing/FOV presets for different weapons and user settings
+    private equippedGunID:  number = 0;
 
     // IK LEGEND FOR GUN MODELS:
     // Left hand grip = "IK_Grip_L"
@@ -12,16 +11,8 @@ export class ViewModel {
     // Muzzle end = "Muzzle_Origin"
     // Muzzle end + 1 unit forward (aim direction) = "Aim_Reference"
 
-
-    // CURRENT STATE:
-    // basic ViewModel class to handle gun models
-
-    // planned weapon aiming system logic:
     // client-side gun model handled by viewmodel
     // remote player gun models, and upper body animations handled by IK system (not built yet)
-
-    // todo: split player model into lower and upper body
-
 
     constructor(private scene: Scene, private camera: any) {}
 
@@ -42,6 +33,7 @@ export class ViewModel {
             if (this.gunMesh) {
                 this.gunMesh.dispose();
             }
+            this.equippedGunID = id;
             this.gunMesh = result.meshes[0];
             this.gunMesh.parent = this.camera;
             // Make client-side gun model invisible to physics and raycasting
@@ -65,23 +57,20 @@ export class ViewModel {
         if (!this.gunMesh) return;
         // Update gun bobbing effect based on movement
         if (isMoving) {
-            this.bobTime += deltaTime * this.bob;
-            console.log("Bobbing time updated:", this.bobTime);
+            this.bobTime += deltaTime * EQUIPPABLES[this.equippedGunID].viewmodel.bob_cycle;
         }else {
             // Reset bob time when not moving
             this.bobTime = 0;
             // Need to find a solution to smooth this, because bobtime -= 1 doesnt work.
         }
-
-        // NEED TO GET EQUIPPED WEAPON FROM CLIENT SIDE PLAYERSTATE LIST TO POPULATE THESE 
-        const bobZ = Math.sin(this.bobTime) * this.cl_bobamt_lat;
-        const bobY = Math.abs(Math.cos(this.bobTime)) * this.cl_bobamt_vert;
-        const lower = isMoving ? this.cl_bob_lower_amt * 0.01 : 0;
+        const bobZ = Math.sin(this.bobTime) * EQUIPPABLES[this.equippedGunID].viewmodel.bob_cycle * EQUIPPABLES[this.equippedGunID].viewmodel.bob_amt_lat;
+        const bobY = Math.abs(Math.cos(this.bobTime)) * EQUIPPABLES[this.equippedGunID].viewmodel.bob_cycle * EQUIPPABLES[this.equippedGunID].viewmodel.bob_amt_vert;
+        const lower = isMoving ? EQUIPPABLES[this.equippedGunID].viewmodel.bob_lower_amt * 0.01 : 0;
 
         this.gunMesh.position = new Vector3(
-            this.viewmodel_offset_x,
-            this.viewmodel_offset_y - lower + bobY,
-            this.viewmodel_offset_z + bobZ
+            EQUIPPABLES[this.equippedGunID].viewmodel.offset_x,
+            EQUIPPABLES[this.equippedGunID].viewmodel.offset_y - lower + bobY,
+            EQUIPPABLES[this.equippedGunID].viewmodel.offset_z + bobZ
         );
     }
 
