@@ -13,7 +13,6 @@ export interface PlayerState {
     consecutiveJumps: number;
     correction?: { position: { x: number; y: number; z: number; } };
     input: PlayerInput;
-    equippedItem?: string; // Optional, for future use
     health: number;
 }
 
@@ -24,6 +23,7 @@ export interface PlayerInput {
     right: boolean;
     jump: boolean;
     rotationY: number;
+    equippedItemID: number;
 }
 
 const WALK_SPEED = 6.6;      // Max walking speed

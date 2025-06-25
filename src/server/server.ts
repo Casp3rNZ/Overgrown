@@ -2,6 +2,7 @@ import { WebSocketServer } from "ws";
 import { simulatePlayerMovement, PlayerState, PlayerInput } from "../shared/movement.js";
 import { handleCollisions } from "../shared/collision.js";
 import { Vector3, Ray } from "@babylonjs/core";
+import { EQUIPPABLES } from "../shared/EQUIPPABLES_DEFINITION.js";
 console.log("Overgrown - WSS listening on ws://localhost:8080");
 
 // Currently all connected players state is stored in memory, and updated every call from the client.
@@ -53,9 +54,10 @@ wss.on("connection", (ws) => {
             left: false,
             right: false,
             jump: false,
-            rotationY: 0
+            rotationY: 0,
+            equippedItemID: 0
         },
-        health: 100, // Default health
+        health: 100
     };
 
     ws.on("message", (msg) => {
@@ -88,7 +90,6 @@ wss.on("connection", (ws) => {
     ws.on("close", () => {
         delete players[id];
         console.log(`Player ${id} disconnected`);
-
         // Broadcast to all clients that a player has left
         wss.clients.forEach(client => {
             if (client.readyState == 1) {
@@ -193,14 +194,22 @@ function handlePlayerHitDetection(
         }
 
     }
-
     if (closestHit) {
-        console.log(`Player ${playerId} hit player ${closestHit}`)
-
         const hitPlayer = players[closestHit];
-        // could do check for collider type here for use with different entities, but for now this works.
+        const hitItemID = hitPlayer.input.equippedItemID
+        let hitDamage = 0;
+        const item = EQUIPPABLES[hitItemID];
+        if (item.type === "gun" || item.type === "melee" || item.type === "grenade") {
+            hitDamage = item.stats.damage;
+        }
+        if (hitDamage <= 0) {
+            console.log(`Player ${playerId} hit player ${closestHit} with item ID ${hitItemID} but no damage was dealt.`);
+            return; // No damage to deal
+        }
+        // Apply damage to the hit player
+        hitPlayer.health -= hitDamage;
         
-        const hitDamage = 10; // generic, will replace with per weapon damage when equipped weapon is added to playerstate.
+        console.log(`Player ${playerId} hit player ${closestHit} with item ID ${hitItemID} for ${hitDamage} damage`);
         // send hit back to clients
         wss.clients.forEach(client => {
             if (client.readyState == 1) { // not built yet on the client side.
@@ -213,6 +222,4 @@ function handlePlayerHitDetection(
         });
     }
 }
-
-// Start the game loop with 20 TPS
 startTPSLoop(20);

@@ -21,10 +21,12 @@ export class Player {
         right: false,
         jump: false,
         rotationY: 0,
+        equippedItemID: 0
     };
     public isGrounded: boolean = true;
     private network: NetworkClient;
     private playerId: string;
+    public health: number = 100;
     private isRemote: boolean;
 
     constructor(scene: Scene, network: NetworkClient, playerId: string, isRemote: boolean = false) {
@@ -42,7 +44,7 @@ export class Player {
             this.camera.minZ = 0.1;
             this.setupMouseInput(scene);
             this.viewModel = new ViewModel(scene, this.camera);
-            this.viewModel.loadGunModel("colt")
+            this.viewModel.loadGunModel(this.input.equippedItemID)
         } else {
             this.createplayerModel(scene)
         }
@@ -243,7 +245,8 @@ export class Player {
                 interpolatedState.position.y,
                 interpolatedState.position.z
             );
-        }        // Update viewmodel bobbing for local player
+        }        
+        // Update viewmodel bobbing for local player
         if (!this.isRemote && this.viewModel) {
             const isMoving = this.input.forward || this.input.backward || this.input.left || this.input.right;
             const deltaTime = this.scene.getEngine().getDeltaTime() / 1000; // Convert to seconds

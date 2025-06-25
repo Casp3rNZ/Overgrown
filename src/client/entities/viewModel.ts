@@ -1,25 +1,11 @@
 import { Scene, AbstractMesh, ImportMeshAsync, Vector3 } from "@babylonjs/core";
-
+import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION.js";
 export class ViewModel {
     public gunMesh: AbstractMesh | null = null;
-
-    // Viewmodel vars
-    viewmodel_offset_x: number = 0.2; // X offset for gun model
-    viewmodel_offset_y: number = -0.12; // Y offset for gun model
-    viewmodel_offset_z: number = 0.2; // Z offset for gun model
-
-    // Bobbing vars
-    cl_bob_lower_amt: number = 0.01; // Lower amount for bobbing
-    cl_bobamt_lat: number = 0.01; // Lateral bobbing amount
-    cl_bobamt_vert: number = 0.001; // Vertical bobbing amount
-    cl_bobcycle: number = 5; // Cycle time for bobbing
-    private bobTime: number = 0; // Time accumulator for bobbing
+    private bobTime: number = 0;
 
     // TODO: create bobbing/FOV presets for different weapons and user settings
 
-    private gunModelPaths: { [key: string]: string } = {
-        "colt": "/assets/weapons/colt.glb",
-    };
     // IK LEGEND FOR GUN MODELS:
     // Left hand grip = "IK_Grip_L"
     // Right hand grip = "IK_Grip_R"
@@ -39,17 +25,23 @@ export class ViewModel {
 
     constructor(private scene: Scene, private camera: any) {}
 
-    public async loadGunModel(name: string): Promise<void> {
+    public async loadGunModel(id: number): Promise<void> {
         try {
-            // Dispose of existing mesh if it exists
+            // Invalid model check (NO passing raw path)
+            if (!EQUIPPABLES[id].modelPath) {
+                throw new Error(`Gun model path not found for key: ${id}`);
+            }
+            if (EQUIPPABLES[id].type !== "gun") {
+                throw new Error(`Loaded model is not a gun for key: ${id}`);
+            }
+            // Load the gun model
+            const result = await ImportMeshAsync(EQUIPPABLES[id].modelPath, this.scene);
+            if (!result.meshes || result.meshes.length === 0) {
+                throw new Error(`No meshes found in model for key: ${id}`);
+            }
             if (this.gunMesh) {
                 this.gunMesh.dispose();
             }
-            // Invalid model check (NO passing raw path)
-            if (!this.gunModelPaths[name]) {
-                throw new Error(`Gun model path not found for key: ${name}`);
-            }
-            const result = await ImportMeshAsync(this.gunModelPaths[name], this.scene);
             this.gunMesh = result.meshes[0];
             this.gunMesh.parent = this.camera;
             // Make client-side gun model invisible to physics and raycasting
@@ -58,9 +50,9 @@ export class ViewModel {
             this.gunMesh.rotation = new Vector3(0, Math.PI / -2, 0);
 
             this.gunMesh.position = new Vector3(
-                this.viewmodel_offset_x,
-                this.viewmodel_offset_y,
-                this.viewmodel_offset_z
+                EQUIPPABLES[id].viewmodel.offset_x,
+                EQUIPPABLES[id].viewmodel.offset_y,
+                EQUIPPABLES[id].viewmodel.offset_z
             );
             console.log("Gun model loaded successfully:", this.gunMesh.name);
         } catch (error) {
@@ -73,7 +65,7 @@ export class ViewModel {
         if (!this.gunMesh) return;
         // Update gun bobbing effect based on movement
         if (isMoving) {
-            this.bobTime += deltaTime * this.cl_bobcycle;
+            this.bobTime += deltaTime * this.bob;
             console.log("Bobbing time updated:", this.bobTime);
         }else {
             // Reset bob time when not moving
@@ -81,6 +73,7 @@ export class ViewModel {
             // Need to find a solution to smooth this, because bobtime -= 1 doesnt work.
         }
 
+        // NEED TO GET EQUIPPED WEAPON FROM CLIENT SIDE PLAYERSTATE LIST TO POPULATE THESE 
         const bobZ = Math.sin(this.bobTime) * this.cl_bobamt_lat;
         const bobY = Math.abs(Math.cos(this.bobTime)) * this.cl_bobamt_vert;
         const lower = isMoving ? this.cl_bob_lower_amt * 0.01 : 0;
