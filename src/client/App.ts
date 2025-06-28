@@ -43,6 +43,10 @@ class Game {
             this.playerManager.updateFromServer(state);
         };
 
+        this.network.onPlayerHit = (playerId: string, damage: number) => {
+            this.playerManager.damagePlayer(playerId, damage);
+        }
+
         window.addEventListener("resize", () => {
             this.engine.resize();
         });

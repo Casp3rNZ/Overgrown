@@ -10,6 +10,8 @@ export class NetworkClient {
     public onReady: (playerId: string) => void = () => {};
     public onChatMessage: (message: string) => void = () => {};
     public onDisconnect: () => void = () => {};
+    public onPlayerHit: (playerId: string, damage: number) => void = () => {};
+    private lastInput: any = null;
 
     constructor(url: string) {
         this.url = url;
@@ -37,6 +39,9 @@ export class NetworkClient {
                 }
                 if (data.type === "chat" && data.message) {
                     this.onChatMessage(data);
+                }
+                if (data.type == "hit") {
+                    this.onPlayerHit(data.playerId, data.damage);
                 }
             };
 
@@ -78,20 +83,42 @@ export class NetworkClient {
 
     public sendInput(input: any) {
         if (!this.playerId || !this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        if (JSON.stringify(input) == this.lastInput) {
+            return; // Ignore duplicate inputs
+        }
+        this.lastInput = JSON.stringify(input);
         this.socket.send(JSON.stringify({
             type: "input",
             playerId: this.playerId,
             input: input
         }));
+        console.log("Input sent:", input);
     }
 
     public sendShootRequest(position: any, direction: any) {
         if (!this.playerId || !this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        if (!position || !direction) {
+            console.error("Invalid position or direction for shoot request.");
+            return;
+        }
+        // ensure "isdirty" and other props from babylonJS vectors are not sent.
+        position = {
+            x: position.x,
+            y: position.y,
+            z: position.z
+        };
+        direction = {
+            x: direction.x,
+            y: direction.y,
+            z: direction.z
+        };
+        let x = JSON.parse(this.lastInput);
         this.socket.send(JSON.stringify({
             type: "shoot",
             playerId: this.playerId,
             position: position,
-            direction: direction
+            direction: direction,
+            equipID: x.equippedItemID
         }));
     }
 

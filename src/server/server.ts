@@ -80,7 +80,7 @@ wss.on("connection", (ws) => {
                 });
             }
             if (data.type == "shoot") {
-                handlePlayerHitDetection(id, data.position, data.direction);
+                handlePlayerHitDetection(id, data);
             }
         } catch (e) {
             console.error("Error parsing message:", e);
@@ -152,20 +152,22 @@ function startTPSLoop(TPS: number) {
 
 function handlePlayerHitDetection(
     playerId: string, 
-    position: { x: number, y: number, z: number }, 
-    direction: { x: number, y: number, z: number 
-    }) {
-
+    data: any
+) {
     const shooter = players[playerId];
     if (!shooter) return;
 
     const rayLength = 100; // 100 unit bullet range
 
+    console.log(`handeplayerhitdetection - recieving pos: ${JSON.stringify(data.position)}, dir: ${JSON.stringify(data.direction)}`);
+
     const ray = new Ray(
-        new Vector3(position.x, position.y, position.z), 
-        new Vector3(direction.x, direction.y, direction.z).normalize(), 
+        new Vector3(data.position.x, data.position.y, data.position.z), 
+        new Vector3(data.direction.x, data.direction.y, data.direction.z).normalize(), 
         rayLength
     )
+
+    console.log(`handeplayerhitdetection - Ray created with: origin=${JSON.stringify(ray.origin)}, direction=${JSON.stringify(ray.direction)}, length=${rayLength}`);
 
     let closestHit = null;
     let closestDistance = Infinity;
@@ -183,9 +185,9 @@ function handlePlayerHitDetection(
         if (intersection) {
                 console.log(`Player ${playerId} hit player ${id} at position ${JSON.stringify(target.position)}`);
                 const distance = Math.sqrt(
-                Math.pow(target.position.x - position.x, 2) +
-                Math.pow(target.position.y - position.y, 2) +
-                Math.pow(target.position.z - position.z, 2)
+                Math.pow(target.position.x - data.position.x, 2) +
+                Math.pow(target.position.y - data.position.y, 2) +
+                Math.pow(target.position.z - data.position.z, 2)
             );
             if (distance < closestDistance) {
                 closestHit = id;
@@ -196,23 +198,28 @@ function handlePlayerHitDetection(
     }
     if (closestHit) {
         const hitPlayer = players[closestHit];
-        const hitItemID = hitPlayer.input.equippedItemID
         let hitDamage = 0;
-        const item = EQUIPPABLES[hitItemID];
+        const item = EQUIPPABLES[data.equipID];
+        console.log(data);
+        if (!item) {
+            console.error(`Item with ID ${data.equipID} not found for player ${closestHit}`);
+            return; // Item not found, no damage to deal
+        }
         if (item.type === "gun" || item.type === "melee" || item.type === "grenade") {
             hitDamage = item.stats.damage;
         }
         if (hitDamage <= 0) {
-            console.log(`Player ${playerId} hit player ${closestHit} with item ID ${hitItemID} but no damage was dealt.`);
+            console.log(`Player ${playerId} hit player ${closestHit} with item ID ${data.equipID} but no damage was dealt.`);
             return; // No damage to deal
         }
         // Apply damage to the hit player
         hitPlayer.health -= hitDamage;
         
-        console.log(`Player ${playerId} hit player ${closestHit} with item ID ${hitItemID} for ${hitDamage} damage`);
+        console.log(`Player ${playerId} hit player ${closestHit} with item ID ${data.equipID} for ${hitDamage} damage`);
         // send hit back to clients
+        // No particle or sounds yet, so sending hit back to only hit client.
         wss.clients.forEach(client => {
-            if (client.readyState == 1) { // not built yet on the client side.
+            if (client[playerId] == closestHit) {
                 client.send(JSON.stringify({
                     type: "hit",
                     playerId: closestHit,

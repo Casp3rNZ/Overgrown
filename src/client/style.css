@@ -144,3 +144,47 @@ body {
   margin-bottom: 0.5em;
   color: #ffcc00;
 }
+
+/* HUD (HP) */
+.HUD {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.HP {
+    position: absolute;
+    right: 2vw;
+    bottom: 3vh;
+    background: rgba(34, 40, 49, 0.92);
+    color: #fff;
+    font-size: 1.2rem;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    padding: 0.4em 1em;
+    border-radius: 0.7em;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    letter-spacing: 0.08em;
+    border: 1.5px solid #ff4e4e;
+    text-shadow: 0 1px 4px #000, 0 0 2px #ff4e4e;
+    transition: background 0.2s, border 0.2s;
+    user-select: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+}
+
+.HP::before {
+    content: '';
+    display: inline-block;
+    width: 1.1em;
+    height: 1.1em;
+    background: linear-gradient(135deg, #ff4e4e 60%, #ffb199 100%);
+    border-radius: 50%;
+    margin-right: 0.4em;
+    box-shadow: 0 0 6px #ff4e4e88;
+}

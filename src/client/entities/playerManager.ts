@@ -106,4 +106,15 @@ export class PlayerManager {
         }
         this.players.clear();
     }
+
+    public damagePlayer(playerId: string, damage: number): void {
+        console.log(`Applying ${damage} damage to player ${playerId}`);
+        const player = this.players.get(playerId);
+        if (player) {
+            player.health -= damage;
+            console.log(`Player ${playerId} took ${damage} damage. Remaining health: ${player.health}`);
+        } else {
+            console.warn(`Player ${playerId} not found for damage application.`);
+        }
+    }
 } 

@@ -1,5 +1,5 @@
 import "@babylonjs/loaders/glTF";
-import { Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools, AnimationGroup, ImportMeshAsync, AbstractMesh } from "@babylonjs/core";
+import { Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools, AnimationGroup, ImportMeshAsync, AbstractMesh, Color3 } from "@babylonjs/core";
 import { PlayerInput, PlayerState } from "../../shared/movement";
 import { NetworkClient } from "../network/clientNetwork";
 import { StateInterpolator } from "./stateInterpolator";
@@ -141,6 +141,7 @@ export class Player {
                     this.input.equippedItemID = 1; // Switch to AK
                     if (this.viewModel) {
                         this.viewModel.loadGunModel(this.input.equippedItemID);
+                        this.input.equippedItemID = 1;
                     }
                 }
                 break;
@@ -149,6 +150,7 @@ export class Player {
                     this.input.equippedItemID = 0; // Switch to Colt
                     if (this.viewModel) {
                         this.viewModel.loadGunModel(this.input.equippedItemID);
+                        this.input.equippedItemID = 0;
                     }
                 }
                 break;
@@ -183,8 +185,17 @@ export class Player {
                     // request client side shot, if returned true, send to server 
                     if (this.viewModel.shoot()) {
                         let directionVector = this.getDirectionFromRotation(this.collisionMesh.rotation.y, this.camera.rotation.x);
-                        console.log("Shooting in direction:", directionVector);
-                        this.network.sendShootRequest(this.camera.position, directionVector);
+                        let originPos = this.collisionMesh.position.add(new Vector3(0, .6, 0)); // Position at head height
+                        this.network.sendShootRequest(originPos, directionVector);
+                        const endPos = originPos.add(directionVector.scale(100)); // 100 units forward
+                        const DEBUG_shootLine = MeshBuilder.CreateLines("DEBUG_shootLine", {
+                            points: [originPos, endPos],
+                            updatable: true,
+                        }, scene);
+                        DEBUG_shootLine.color = new Color3(1, 0, 0); // Red color for debug
+                        setTimeout(() => {
+                            DEBUG_shootLine.dispose(); // Remove after 1 second
+                        }, 10000);
                     }
                 }
             }
@@ -196,16 +207,8 @@ export class Player {
     // Called every frame
     public tick(): void {
         if (this.isRemote) return; // Remote players send input on their own client
-        
-        const _input = {
-            forward: this.input.forward,
-            backward: this.input.backward,
-            left: this.input.left,
-            right: this.input.right,
-            jump: this.input.jump,
-            rotationY: this.collisionMesh.rotation.y
-        }
-        this.network.sendInput(_input);
+    
+        this.network.sendInput(this.input);
     }
 
     // Called when server sends new player state
@@ -223,12 +226,8 @@ export class Player {
             });
 
             if (this.isRemote) {
-                // Update input for remote players animation handling
-                this.input = { ...me.input };
-                // update remote player rotation
+                this.input = { ...me.input }; // for remote player animation handling
                 this.collisionMesh.rotation.y = me.input.rotationY;
-
-                // Update grounded state
                 this.isGrounded = me.isGrounded;
             }
         }
@@ -270,16 +269,15 @@ export class Player {
     }
 
     private getDirectionFromRotation(yaw: number, pitch: number): Vector3 {
-        // yaw: rotation around Y axis (left/right)
-        // pitch: rotation around X axis (up/down)
-        const x = Math.cos(yaw) * Math.cos(pitch);
-        const y = Math.sin(pitch);
-        const z = Math.sin(yaw) * Math.cos(pitch);
+        const x = Math.sin(yaw) * Math.cos(pitch);
+        const y = -Math.sin(pitch);
+        const z = Math.cos(yaw) * Math.cos(pitch);
 
         const length = Math.sqrt(x * x + y * y + z * z);
         return new Vector3(
             x / length, 
             y / length, 
-            z / length);
+            z / length
+        );
     }
 }

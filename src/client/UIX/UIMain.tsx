@@ -3,6 +3,7 @@ import { ChatBox } from "./chatBox";
 import { Crosshair } from "./crosshair";
 import Game from "../App";
 import { render } from "preact";
+import { HUD } from "./HUD";
 
 export function UIRoot({ game }) {
     const [chatVisible, setChatVisible] = useState(true);
@@ -108,6 +109,7 @@ export function UIRoot({ game }) {
             onSend={handleChatSend}
             visible={chatVisible}
         />
+        <HUD playerManager={game.playerManager} />
         {/* Other UI components */}
     </div>
     );
