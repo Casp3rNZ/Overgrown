@@ -114,6 +114,7 @@ export class Player {
         }
 
         switch (event.key) {
+            // Movement keys
             case "w":
                 this.input.forward = keyType;
                 break;
@@ -134,10 +135,24 @@ export class Player {
                 break;
             case " ":
                 this.input.jump = keyType;
-            case " ":
-                this.input.jump = keyType;
                 break;
-        }
+            case "1":
+                if (keyType && this.input.equippedItemID !== 1) {
+                    this.input.equippedItemID = 1; // Switch to AK
+                    if (this.viewModel) {
+                        this.viewModel.loadGunModel(this.input.equippedItemID);
+                    }
+                }
+                break;
+            case "2":
+                if (keyType && this.input.equippedItemID !== 0) {
+                    this.input.equippedItemID = 0; // Switch to Colt
+                    if (this.viewModel) {
+                        this.viewModel.loadGunModel(this.input.equippedItemID);
+                    }
+                }
+                break;
+        }1
     }
 
     private setupMouseInput(scene: Scene): void {
@@ -145,7 +160,7 @@ export class Player {
         
         window.addEventListener("mousemove", (event) => {
             if (document.pointerLockElement === scene.getEngine().getRenderingCanvas()) {
-                const sensitivity = 0.002;
+                const sensitivity = 0.0013;
                 // yaw left/right
                 if (this.collisionMesh) {
                     this.collisionMesh.rotation.y += event.movementX * sensitivity;
@@ -161,21 +176,6 @@ export class Player {
                 this.input.rotationY = this.collisionMesh.rotation.y;
             }
         });
-
-        window.addEventListener("mousedown", (event) => {
-            if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
-                if(event.button == 0 && this.viewModel) { // Left mouse button
-                    // request client side shot, if returned true, send to server 
-                    if (this.viewModel.shoot()) {
-                        let directionVector = this.getDirectionFromRotation(this.collisionMesh.rotation.y, this.camera.rotation.x);
-                        console.log("Shooting in direction:", directionVector);
-                        this.network.sendShootRequest(this.camera.position, directionVector);
-                    }
-                }
-            }
-        });
-
-        // not handling mouseup input / full auto for now.
 
         window.addEventListener("mousedown", (event) => {
             if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {

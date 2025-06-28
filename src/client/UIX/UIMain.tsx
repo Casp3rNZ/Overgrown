@@ -23,6 +23,9 @@ export function UIRoot({ game }) {
 
         // Pointer lock change
         const handleCanvasClick = () => {
+            if (document.pointerLockElement === canvas) {
+                return; // Already locked
+            }
             canvas.requestPointerLock();
         };
         canvas.addEventListener("click", handleCanvasClick);
