@@ -120,16 +120,10 @@ export class Player {
                 break;
             case "s":
                 this.input.backward = keyType;
-            case "s":
-                this.input.backward = keyType;
                 break;
             case "a":
                 this.input.left = keyType;
-            case "a":
-                this.input.left = keyType;
                 break;
-            case "d":
-                this.input.right = keyType;
             case "d":
                 this.input.right = keyType;
                 break;
