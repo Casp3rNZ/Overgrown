@@ -158,16 +158,11 @@ function handlePlayerHitDetection(
     if (!shooter) return;
 
     const rayLength = 100; // 100 unit bullet range
-
-    console.log(`handeplayerhitdetection - recieving pos: ${JSON.stringify(data.position)}, dir: ${JSON.stringify(data.direction)}`);
-
     const ray = new Ray(
         new Vector3(data.position.x, data.position.y, data.position.z), 
         new Vector3(data.direction.x, data.direction.y, data.direction.z).normalize(), 
         rayLength
     )
-
-    console.log(`handeplayerhitdetection - Ray created with: origin=${JSON.stringify(ray.origin)}, direction=${JSON.stringify(ray.direction)}, length=${rayLength}`);
 
     let closestHit = null;
     let closestDistance = Infinity;
@@ -181,9 +176,7 @@ function handlePlayerHitDetection(
         const minBound = new Vector3(target.position.x - 0.5, target.position.y - 0.9, target.position.z - 0.5);
         const maxBound = new Vector3(target.position.x + 0.5, target.position.y + 0.9, target.position.z + 0.5);
         const intersection = ray.intersectsBoxMinMax(minBound, maxBound);
-        console.log(`Hit check for player ${id}: min=${JSON.stringify(minBound)}, max=${JSON.stringify(maxBound)}, intersection=${intersection}`);
         if (intersection) {
-                console.log(`Player ${playerId} hit player ${id} at position ${JSON.stringify(target.position)}`);
                 const distance = Math.sqrt(
                 Math.pow(target.position.x - data.position.x, 2) +
                 Math.pow(target.position.y - data.position.y, 2) +
@@ -200,7 +193,6 @@ function handlePlayerHitDetection(
         const hitPlayer = players[closestHit];
         let hitDamage = 0;
         const item = EQUIPPABLES[data.equipID];
-        console.log(data);
         if (!item) {
             console.error(`Item with ID ${data.equipID} not found for player ${closestHit}`);
             return; // Item not found, no damage to deal
@@ -217,16 +209,13 @@ function handlePlayerHitDetection(
         
         console.log(`Player ${playerId} hit player ${closestHit} with item ID ${data.equipID} for ${hitDamage} damage`);
         // send hit back to clients
-        // No particle or sounds yet, so sending hit back to only hit client.
         wss.clients.forEach(client => {
-            if (client[playerId] == closestHit) {
                 client.send(JSON.stringify({
                     type: "hit",
                     playerId: closestHit,
                     damage: hitDamage
                 }));
-            }
-        });
+            });
     }
 }
 startTPSLoop(20);

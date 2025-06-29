@@ -21,7 +21,7 @@ export function HUD ({ playerManager }: HUDProps) {
 
     return (
         <div class="HUD">
-            <div class="HP">HP: {health}</div>
+            <div class="HP"> {health}</div>
         </div>
     )
 

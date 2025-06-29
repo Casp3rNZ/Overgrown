@@ -41,6 +41,7 @@ export class NetworkClient {
                     this.onChatMessage(data);
                 }
                 if (data.type == "hit") {
+                    console.log(`Recieving hit of ${data.damage}`);
                     this.onPlayerHit(data.playerId, data.damage);
                 }
             };
@@ -92,7 +93,7 @@ export class NetworkClient {
             playerId: this.playerId,
             input: input
         }));
-        console.log("Input sent:", input);
+        //console.log("Input sent:", input);
     }
 
     public sendShootRequest(position: any, direction: any) {
