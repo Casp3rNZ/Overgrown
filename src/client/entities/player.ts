@@ -23,6 +23,7 @@ export class Player {
         rotationY: 0,
         equippedItemID: 0
     };
+    dead: boolean = false;
     public isGrounded: boolean = true;
     private network: NetworkClient;
     private playerId: string;

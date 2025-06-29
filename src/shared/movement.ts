@@ -14,6 +14,7 @@ export interface PlayerState {
     correction?: { position: { x: number; y: number; z: number; } };
     input: PlayerInput;
     health: number;
+    dead: boolean;
 }
 
 export interface PlayerInput {

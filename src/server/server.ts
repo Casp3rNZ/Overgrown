@@ -57,7 +57,8 @@ wss.on("connection", (ws) => {
             rotationY: 0,
             equippedItemID: 0
         },
-        health: 100
+        health: 100,
+        dead: false
     };
 
     ws.on("message", (msg) => {
@@ -152,7 +153,7 @@ function startTPSLoop(TPS: number) {
 
 function handlePlayerHitDetection(
     playerId: string, 
-    data: any
+    data: any // fuck this, just pass the whole thing until boilerplate is finished.
 ) {
     const shooter = players[playerId];
     if (!shooter) return;
@@ -206,16 +207,33 @@ function handlePlayerHitDetection(
         }
         // Apply damage to the hit player
         hitPlayer.health -= hitDamage;
-        
         console.log(`Player ${playerId} hit player ${closestHit} with item ID ${data.equipID} for ${hitDamage} damage`);
+
+        if (hitPlayer.health <= 0) {
+            hitPlayer.health = 0;
+            hitPlayer.dead = true;
+
+            wss.clients.forEach(client => {
+                if (client.readyState === 1) {
+                    client.send(JSON.stringify({
+                        type: "death",
+                        playerId: closestHit,
+                        killerId: playerId,
+                        equipID: data.equipID
+                    }));
+                }
+            });
+            return; // Player is dead, no further processing needed
+        }  // not implemented on clientside yet.
+        
         // send hit back to clients
         wss.clients.forEach(client => {
-                client.send(JSON.stringify({
-                    type: "hit",
-                    playerId: closestHit,
-                    damage: hitDamage
-                }));
-            });
+            client.send(JSON.stringify({
+                type: "hit",
+                playerId: closestHit,
+                damage: hitDamage
+            }));
+        });
     }
 }
 startTPSLoop(20);
