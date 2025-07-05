@@ -47,6 +47,10 @@ class Game {
             this.playerManager.damagePlayer(playerId, damage);
         }
 
+        this.network.onPlayerDeath = (playerId: string) => {
+            this.playerManager.handlePlayerDeath(playerId);
+        }
+
         window.addEventListener("resize", () => {
             this.engine.resize();
         });

@@ -64,24 +64,29 @@ wss.on("connection", (ws) => {
     ws.on("message", (msg) => {
         try {
             let data = JSON.parse(msg.toString());
-            if (data.type == "input") {
-                players[id].input = data.input;
-            }
-            if (data.type == "chat") {
-                console.log(`Chat from ${id}: ${data.message}`);
-                // Broadcast chat message to all clients
-                wss.clients.forEach(client => {
-                    if (client.readyState === 1) {
-                        client.send(JSON.stringify({ 
-                            type: "chat", 
-                            playerId: data.playerId,
-                            message: data.message
-                        }));
+            switch (data.type) {
+                case "input":
+                    players[id].input = data.input;
+                
+                case "chat":
+                    console.log(`Chat from ${id}: ${data.message}`);
+                    // Broadcast chat message to all clients
+                    wss.clients.forEach(client => {
+                        if (client.readyState === 1) {
+                            client.send(JSON.stringify({ 
+                                type: "chat", 
+                                playerId: data.playerId,
+                                message: data.message
+                            }));
+                        }
+                    });
+                case "shoot":
+                    handlePlayerHitDetection(id, data);
+                    break;
+                case "respawnRequest":
+                    if (players[id].dead) {
+                        handlePlayerRespawn(id);
                     }
-                });
-            }
-            if (data.type == "shoot") {
-                handlePlayerHitDetection(id, data);
             }
         } catch (e) {
             console.error("Error parsing message:", e);
@@ -151,6 +156,45 @@ function startTPSLoop(TPS: number) {
     setTimeout(tick, tickDelay);
 }
 
+function handlePlayerRespawn(playerId: string) {
+    const player = players[playerId];
+    if (!player) return;
+
+    // Reset player states
+    player.position = { x: 0, y: 1.8, z: 0 };
+    player.velocity = { x: 0, y: 0, z: 0};
+    player.isGrounded = false;
+    player.health = 100;
+    player.dead = false;
+    player.input = {
+        forward: false,
+        backward: false,
+        left: false,
+        right: false,
+        jump: false,
+        rotationY: 0,
+        equippedItemID: 0
+    };
+    player.consecutiveJumps = 0;
+    player.lastJumpTime = 0;
+    player.friction = 0.5;
+    player.strafeAngle = 0;
+    player.wishDirection = { x: 0, y: 0, z: 0 };
+    player.moveDirection = { x: 0, y: 0, z: 0 };
+    player.jumpQueued = false;
+    player.correction = null;
+    console.log(`Player ${playerId} respawned`);
+    // Notify all clients about the respawn
+    wss.clients.forEach(client => {
+        if (client.readyState === 1) {
+            client.send(JSON.stringify({
+                type: "respawnConfirmed",
+                playerId: playerId,
+                position: player.position
+        }));
+    }});
+}
+
 function handlePlayerHitDetection(
     playerId: string, 
     data: any // fuck this, just pass the whole thing until boilerplate is finished.
@@ -200,10 +244,6 @@ function handlePlayerHitDetection(
         }
         if (item.type === "gun" || item.type === "melee" || item.type === "grenade") {
             hitDamage = item.stats.damage;
-        }
-        if (hitDamage <= 0) {
-            console.log(`Player ${playerId} hit player ${closestHit} with item ID ${data.equipID} but no damage was dealt.`);
-            return; // No damage to deal
         }
         // Apply damage to the hit player
         hitPlayer.health -= hitDamage;

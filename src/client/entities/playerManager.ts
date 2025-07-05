@@ -117,4 +117,16 @@ export class PlayerManager {
             console.warn(`Player ${playerId} not found for damage application.`);
         }
     }
+
+    public handlePlayerDeath(playerId: string): void {
+        const player = this.players.get(playerId);
+        player.dead = true;
+        player.health = 0;
+
+        if (player) {
+            console.log(`Player ${playerId} has died.`);
+        } else {
+            console.warn(`Player ${playerId} not found for death handling.`);
+        }
+    }   
 } 

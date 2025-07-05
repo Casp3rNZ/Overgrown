@@ -103,6 +103,25 @@ export class Player {
         //this.camera.ellipsoid = new Vector3(0.5, 0.5, 0.5);
     }
 
+    public respawn(): void {
+        if (this.dead == false) return;
+        this.dead = false;
+        this.health = 100;
+        this.collisionMesh.position.set(0, 5, 0);
+        this.collisionMesh.rotation.set(0, 0, 0);
+        this.input = {
+            forward: false,
+            backward: false,
+            left: false,
+            right: false,
+            jump: false,
+            rotationY: 0,
+            equippedItemID: 0
+        };
+        this.viewModel.loadGunModel(this.input.equippedItemID);
+        this.playAnimation("idle");
+    }
+
     public handleKeyboardInput(event: KeyboardEvent): void {
         if (this.isRemote) return; // Remote players don't handle input
         let keyType = null;
@@ -112,6 +131,13 @@ export class Player {
             keyType = false;
         } else {
             return; // Not a key event we handle
+        }
+
+        if (this.dead == true) {
+            if (event.key == " "){
+                this.network.sendRespawnRequest();
+            }
+            return; // Ignore input if dead
         }
 
         switch (event.key) {
@@ -173,6 +199,11 @@ export class Player {
                 this.input.rotationY = this.collisionMesh.rotation.y;
             }
         });
+
+        if (this.dead == true) {
+            // If dead, handle only mouse look.
+            return;
+        }
 
         window.addEventListener("mousedown", (event) => {
             if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {

@@ -4,12 +4,14 @@ import { Crosshair } from "./crosshair";
 import Game from "../App";
 import { render } from "preact";
 import { HUD } from "./HUD";
+import { DeathScreen } from "./deathScreen";
 
 export function UIRoot({ game }) {
     const [chatVisible, setChatVisible] = useState(true);
     const [messages, setMessages] = useState([]);
     const chatInputRef = useRef<HTMLInputElement>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const [isDead, setIsDead] = useState(false);
 
     // Attach canvas ref after mount
     useEffect(() => {
@@ -80,14 +82,16 @@ export function UIRoot({ game }) {
             localPlayer.handleKeyboardInput(event, false);
         };
         document.addEventListener("keyup", handleKeyUp);
-    }, [game]);
 
-    // Chat message handler
-    useEffect(() => {
+        if(game.playerManager.getLocalPlayer()?.dead) {
+            setIsDead(true);
+        }
+
         game.network.onChatMessage = (data: any) => {
             console.log("Received chat message:", data);
             setMessages(msgs => [...msgs, data]);
         };
+
     }, [game]);
 
     // Chat input submission handler
@@ -110,6 +114,8 @@ export function UIRoot({ game }) {
             visible={chatVisible}
         />
         <HUD playerManager={game.playerManager} />
+        {isDead && <DeathScreen/>}
+        
         {/* Other UI components */}
     </div>
     );

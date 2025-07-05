@@ -10,6 +10,7 @@ export class NetworkClient {
     public onReady: (playerId: string) => void = () => {};
     public onChatMessage: (message: string) => void = () => {};
     public onDisconnect: () => void = () => {};
+    public onPlayerDeath: (playerId: string) => void = () => {};
     public onPlayerHit: (playerId: string, damage: number) => void = () => {};
     private lastInput: any = null;
 
@@ -39,6 +40,9 @@ export class NetworkClient {
                 }
                 if (data.type === "chat" && data.message) {
                     this.onChatMessage(data);
+                }
+                if (data.type == "death") {
+                    this.onPlayerDeath(data.playerId);
                 }
                 if (data.type == "hit") {
                     console.log(`Recieving hit of ${data.damage}`);
@@ -94,6 +98,15 @@ export class NetworkClient {
             input: input
         }));
         //console.log("Input sent:", input);
+    }
+
+    public sendRespawnRequest() {
+        if (!this.playerId || !this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: "respawnRequest",
+            playerId: this.playerId
+        }));
+        console.log("Respawn request sent for player:", this.playerId);
     }
 
     public sendShootRequest(position: any, direction: any) {
