@@ -40,7 +40,7 @@ export function UIRoot({ game }) {
                 console.log("Pointer unlocked");
             }
         };
-        document.addEventListener("pointerlockchange", handlePointerLockChange);
+        canvas.addEventListener("pointerlockchange", handlePointerLockChange);
 
         const handleEscape = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
@@ -59,17 +59,15 @@ export function UIRoot({ game }) {
         if (document.activeElement === chatInputRef.current) return;
         const localPlayer = game.playerManager.getLocalPlayer();
         if (!localPlayer) return;
-
-        if (event.key !== "Enter" && document.pointerLockElement === canvas) {
-            // Game controls
+        if (event.key === "Enter" && document.pointerLockElement === canvas) {
+            // Open chat
+            setTimeout(() => {
+                chatInputRef.current?.focus();
+            }, 0);
+            document.exitPointerLock();
+        }else {
             localPlayer.handleKeyboardInput(event, true);
-            } else if (event.key === "Enter" && document.pointerLockElement === canvas) {
-                // Open chat
-                setTimeout(() => {
-                    chatInputRef.current?.focus();
-                }, 0);
-                document.exitPointerLock();
-            }
+        }
         };
         canvas.addEventListener("keydown", handleKeyDown);
 
@@ -87,21 +85,8 @@ export function UIRoot({ game }) {
             setMessages(msgs => [...msgs, data]);
         };
 
-        // Handle death event
-        game.network.onPlayerDeath = (playerId: string) => {
-            const localPlayer = game.playerManager.getLocalPlayer();
-            if (localPlayer && localPlayer.playerId === playerId) {
-                setIsDead(true);
-            }
-        };
-
-        // Handle respawn event
-        game.network.onRespawnConfirmed = (data: any) => {
-            const localPlayer = game.playerManager.getLocalPlayer();
-            if (localPlayer && localPlayer.playerId === data.playerId) {
-                setIsDead(false);
-            }
-        };
+        // expose the setIsDead function to main loop
+        game.setIsDead = setIsDead;
 
     }, [game]);
 

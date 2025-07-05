@@ -23,10 +23,10 @@ export class Player {
         rotationY: 0,
         equippedItemID: 0
     };
-    dead: boolean = false;
+    public dead: boolean = false;
     public isGrounded: boolean = true;
     private network: NetworkClient;
-    private playerId: string;
+    public playerId: string;
     public health: number = 100;
     private isRemote: boolean;
     private lastInput: PlayerInput | null = null;
@@ -133,14 +133,14 @@ export class Player {
         } else {
             return; // Not a key event we handle
         }
-
-        if (this.dead == true) {
+        console.log("Key event:", event.key, "dead", this.dead);
+        if (this.dead == true && keyType == true) {
             if (event.key == " "){
                 this.network.sendRespawnRequest();
             }
             return; // Ignore input if dead
         }
-        
+
         // Movement keys
         switch (event.key) {
             case "w":

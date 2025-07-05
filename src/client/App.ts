@@ -13,6 +13,7 @@ class Game {
     public network: NetworkClient;
     private lastTickTime: number = 0;
     private readonly TICK_INTERVAL = 1000 / 20;
+    public setIsDead: (dead: boolean) => void = () => {};
 
     constructor(private canvas: HTMLCanvasElement) {
         this.engine = new Engine(this.canvas, true);
@@ -47,12 +48,14 @@ class Game {
             this.playerManager.damagePlayer(playerId, damage);
         }
 
-        this.network.onPlayerDeath = (playerId: string) => {
-            this.playerManager.handlePlayerDeath(playerId);
+        this.network.onPlayerDeath = (data: any) => {
+            this.playerManager.handlePlayerDeath(data);
+            if (this.setIsDead && this.playerManager.getLocalPlayer().playerId == data.playerId) this.setIsDead(true); // This will update the UI in UIMain for death screen
         }
 
         this.network.onRespawnConfirmed = (data: any) => {
             this.playerManager.respawnPlayer(data.playerId);
+            if (this.setIsDead && this.playerManager.getLocalPlayer().playerId == data.playerId) this.setIsDead(false); // Reset death state in UI
         }
 
         window.addEventListener("resize", () => {

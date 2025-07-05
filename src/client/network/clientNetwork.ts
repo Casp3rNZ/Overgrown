@@ -32,6 +32,9 @@ export class NetworkClient {
 
             this.socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
+                if (data.type != 'state') {
+                    console.log("Received message:", data);
+                }
                 switch (data.type) {
                     case "init":
                         if (data.id) {
@@ -50,15 +53,14 @@ export class NetworkClient {
                         }
                         break;
                     case "death":
-                        this.onPlayerDeath(data.playerId);
+                        console.log("Player death event received:", data);
+                        this.onPlayerDeath(data);
                         break;
                     case "hit":
-                        console.log(`Recieving hit of ${data.damage}`);
                         this.onPlayerHit(data.playerId, data.damage);
                         break;
                     case "respawnConfirmed":
                         this.onRespawnConfirmed(data);
-                        console.log(`Player ${data.playerId} respawned.`);
                         break;
                 }
             };

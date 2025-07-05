@@ -250,9 +250,10 @@ function handlePlayerHitDetection(
         }
         // Apply damage to the hit player
         hitPlayer.health -= hitDamage;
-        console.log(`Player ${playerId} hit player ${closestHit} with item ID ${data.equipID} for ${hitDamage} damage`);
+        //console.log(`Player ${playerId} hit player ${closestHit} with item ID ${data.equipID} for ${hitDamage} damage`);
 
         if (hitPlayer.health <= 0) {
+            console.log(`Player ${closestHit} has died.`);
             hitPlayer.health = 0;
             hitPlayer.dead = true;
 
@@ -261,8 +262,6 @@ function handlePlayerHitDetection(
                     client.send(JSON.stringify({
                         type: "death",
                         playerId: closestHit,
-                        killerId: playerId,
-                        equipID: data.equipID
                     }));
                 }
             });

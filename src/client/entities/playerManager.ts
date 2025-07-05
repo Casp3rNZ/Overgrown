@@ -118,15 +118,15 @@ export class PlayerManager {
         }
     }
 
-    public handlePlayerDeath(playerId: string): void {
-        const player = this.players.get(playerId);
-        player.dead = true;
-        player.health = 0;
-
+    public handlePlayerDeath(data: any): void {
+        console.log("Handling player death:", data);
+        const player = this.players.get(data.playerId);
         if (player) {
-            console.log(`Player ${playerId} has died.`);
+            player.dead = true;
+            player.health = 0;
+            console.log(`Player ${data.playerId} has died.`);
         } else {
-            console.warn(`Player ${playerId} not found for death handling.`);
+            console.warn(`Player ${data.playerId} not found for death handling.`);
         }
     } 
     
