@@ -128,5 +128,15 @@ export class PlayerManager {
         } else {
             console.warn(`Player ${playerId} not found for death handling.`);
         }
-    }   
+    } 
+    
+    public respawnPlayer(playerId: string): void {
+        const player = this.players.get(playerId);
+        if (player) {
+            player.respawn();
+            console.log(`Player ${playerId} has respawned.`);
+        } else {
+            console.warn(`Player ${playerId} not found for respawn.`);
+        }
+    }
 } 

@@ -67,9 +67,8 @@ wss.on("connection", (ws) => {
             switch (data.type) {
                 case "input":
                     players[id].input = data.input;
-                
+                    break;
                 case "chat":
-                    console.log(`Chat from ${id}: ${data.message}`);
                     // Broadcast chat message to all clients
                     wss.clients.forEach(client => {
                         if (client.readyState === 1) {
@@ -80,6 +79,7 @@ wss.on("connection", (ws) => {
                             }));
                         }
                     });
+                    break;
                 case "shoot":
                     handlePlayerHitDetection(id, data);
                     break;
@@ -87,6 +87,7 @@ wss.on("connection", (ws) => {
                     if (players[id].dead) {
                         handlePlayerRespawn(id);
                     }
+                    break;
             }
         } catch (e) {
             console.error("Error parsing message:", e);
@@ -161,7 +162,7 @@ function handlePlayerRespawn(playerId: string) {
     if (!player) return;
 
     // Reset player states
-    player.position = { x: 0, y: 1.8, z: 0 };
+    //player.position = { x: 0, y: 1.8, z: 0 };
     player.velocity = { x: 0, y: 0, z: 0};
     player.isGrounded = false;
     player.health = 100;
@@ -184,6 +185,7 @@ function handlePlayerRespawn(playerId: string) {
     player.jumpQueued = false;
     player.correction = null;
     console.log(`Player ${playerId} respawned`);
+
     // Notify all clients about the respawn
     wss.clients.forEach(client => {
         if (client.readyState === 1) {
@@ -214,6 +216,7 @@ function handlePlayerHitDetection(
 
     for (const [id, target] of Object.entries(players)) {
         if (id === playerId) continue; // Don't hit self
+        if (target.dead) continue; // or dead players
 
         // hard-coded capsule values for collision mesh to match player.ts, will replace with detailed mesh eventually.
         // Check if ray intersects with player bounding box.

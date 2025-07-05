@@ -29,6 +29,7 @@ export class Player {
     private playerId: string;
     public health: number = 100;
     private isRemote: boolean;
+    private lastInput: PlayerInput | null = null;
 
     constructor(scene: Scene, network: NetworkClient, playerId: string, isRemote: boolean = false) {
         this.playerId = playerId;
@@ -118,7 +119,7 @@ export class Player {
             rotationY: 0,
             equippedItemID: 0
         };
-        this.viewModel.loadGunModel(this.input.equippedItemID);
+        //this.viewModel.loadGunModel(this.input.equippedItemID);
         this.playAnimation("idle");
     }
 
@@ -139,9 +140,9 @@ export class Player {
             }
             return; // Ignore input if dead
         }
-
+        
+        // Movement keys
         switch (event.key) {
-            // Movement keys
             case "w":
                 this.input.forward = keyType;
                 break;
@@ -175,7 +176,7 @@ export class Player {
                     }
                 }
                 break;
-        }1
+        }
     }
 
     private setupMouseInput(scene: Scene): void {
@@ -200,19 +201,18 @@ export class Player {
             }
         });
 
-        if (this.dead == true) {
-            // If dead, handle only mouse look.
-            return;
-        }
-
         window.addEventListener("mousedown", (event) => {
+            if (this.dead) return; // Ignore input if dead
+            if (this.isRemote) return;
             if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
                 if(event.button == 0 && this.viewModel) { // Left mouse button
-                    // request client side shot, if returned true, send to server 
+                    // request client side shot to check animation/fire state, if returned true, send request to server. 
                     if (this.viewModel.shoot()) {
                         let directionVector = this.getDirectionFromRotation(this.collisionMesh.rotation.y, this.camera.rotation.x);
                         let originPos = this.collisionMesh.position.add(new Vector3(0, .6, 0)); // Position at head height
                         this.network.sendShootRequest(originPos, directionVector);
+
+                        // draw debug line 
                         const endPos = originPos.add(directionVector.scale(100)); // 100 units forward
                         const DEBUG_shootLine = MeshBuilder.CreateLines("DEBUG_shootLine", {
                             points: [originPos, endPos],
@@ -233,8 +233,11 @@ export class Player {
     // Called every frame
     public tick(): void {
         if (this.isRemote) return; // Remote players send input on their own client
-    
-        this.network.sendInput(this.input);
+        if (this.dead) return; // Ignore input if dead
+        if (JSON.stringify(this.input) != JSON.stringify(this.lastInput) && this.lastInput !== null) {
+            this.network.sendInput(this.input);
+        }
+        this.lastInput = { ...this.input };
     }
 
     // Called when server sends new player state

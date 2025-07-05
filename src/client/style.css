@@ -185,8 +185,6 @@ body {
 }
 
 /* Death Screen */
-
-/* Death Screen Overlay */
 .death-screen {
     position: fixed;
     top: 0;
@@ -198,7 +196,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(20, 10, 20, 0.72);
+    background: rgba(20, 10, 20, 0.3);
     backdrop-filter: blur(6px);
     box-shadow: 0 0 0 100vw rgba(0,0,0,0.25) inset;
     text-align: center;
@@ -215,7 +213,7 @@ body {
     font-size: 2.2rem;
     margin: 0;
     color: #ff4e4e;
-    text-shadow: 0 0 16px #e74c3c, 0 2px 8px #000;
+    text-shadow: 0 0 1rem #e74c3c, 0 2px 8px #000;
     animation: pulseSkull 1.2s infinite alternate;
 }
 
@@ -225,42 +223,30 @@ body {
 }
 
 .death-screen h1 {
-    font-size: 2.8rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    margin: 0.2em 0 0.1em 0;
-    color: #fff;
-    text-shadow: 0 0 24px #e74c3c, 0 2px 8px #000;
-    background: linear-gradient(90deg, #ff4e4e 20%, #fff 80%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: 3rem;
+    letter-spacing: 0.12rem;
+    margin: 0.2rem 0 0.1rem 0;
+    color: #e74c3c88;
+    text-shadow: 0 0 1rem #e74c3c, 0 2px 8px #000;
+    font-weight: 600;
 }
 
 .death-screen p:last-child {
     font-size: 1.2rem;
     color: #fff;
-    margin: 0;
-    padding: 0.7em 1.5em;
-    border-radius: 12px;
+    padding: 0.7rem 1.5rem;
+    border-radius: 0.8rem;
     background: rgba(40, 40, 60, 0.55);
     box-shadow: 0 2px 16px 0 rgba(30, 0, 0, 0.18);
     border: 1px solid rgba(255,255,255,0.08);
     font-weight: 500;
     letter-spacing: 0.01em;
-    backdrop-filter: blur(2px);
-    animation: breatheHint 2.2s infinite alternate;
-}
-
-@keyframes breatheHint {
-    from { background: rgba(40,40,60,0.55);}
-    to   { background: rgba(60,40,60,0.75);}
+    animation: none;
 }
 
 .death-screen strong {
     color: #7ecfff;
     text-shadow: 0 0 8px #4e8cff;
-    font-weight: 700;
-    font-size: 1.1em;
-    letter-spacing: 0.04em;
+    font-size: 1.2em;
+    letter-spacing: 0.05rem;
 }

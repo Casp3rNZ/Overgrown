@@ -12,6 +12,7 @@ export class NetworkClient {
     public onDisconnect: () => void = () => {};
     public onPlayerDeath: (playerId: string) => void = () => {};
     public onPlayerHit: (playerId: string, damage: number) => void = () => {};
+    public onRespawnConfirmed: (data: any) => void = () => {};
     private lastInput: any = null;
 
     constructor(url: string) {
@@ -31,22 +32,34 @@ export class NetworkClient {
 
             this.socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                if (data.type === "init" && data.id) {
-                    this.playerId = data.id;
-                    this.onReady(data.id);
-                }
-                if (data.type === "state" && data.players) {
-                    this.onState(data.players);
-                }
-                if (data.type === "chat" && data.message) {
-                    this.onChatMessage(data);
-                }
-                if (data.type == "death") {
-                    this.onPlayerDeath(data.playerId);
-                }
-                if (data.type == "hit") {
-                    console.log(`Recieving hit of ${data.damage}`);
-                    this.onPlayerHit(data.playerId, data.damage);
+                switch (data.type) {
+                    case "init":
+                        if (data.id) {
+                            this.playerId = data.id;
+                            this.onReady(data.id);
+                        }
+                        break;
+                    case "state":
+                        if (data.players) {
+                            this.onState(data.players);
+                        }
+                        break;
+                    case "chat":
+                        if (data.message) {
+                            this.onChatMessage(data);
+                        }
+                        break;
+                    case "death":
+                        this.onPlayerDeath(data.playerId);
+                        break;
+                    case "hit":
+                        console.log(`Recieving hit of ${data.damage}`);
+                        this.onPlayerHit(data.playerId, data.damage);
+                        break;
+                    case "respawnConfirmed":
+                        this.onRespawnConfirmed(data);
+                        console.log(`Player ${data.playerId} respawned.`);
+                        break;
                 }
             };
 

@@ -77,19 +77,30 @@ export function UIRoot({ game }) {
         const handleKeyUp = (event: KeyboardEvent) => {
             const localPlayer = game.playerManager.getLocalPlayer();
             if (!localPlayer) return;
-
-            // Game controls
             localPlayer.handleKeyboardInput(event, false);
         };
         document.addEventListener("keyup", handleKeyUp);
 
-        if(game.playerManager.getLocalPlayer()?.dead) {
-            setIsDead(true);
-        }
-
+        // Handle chat input
         game.network.onChatMessage = (data: any) => {
             console.log("Received chat message:", data);
             setMessages(msgs => [...msgs, data]);
+        };
+
+        // Handle death event
+        game.network.onPlayerDeath = (playerId: string) => {
+            const localPlayer = game.playerManager.getLocalPlayer();
+            if (localPlayer && localPlayer.playerId === playerId) {
+                setIsDead(true);
+            }
+        };
+
+        // Handle respawn event
+        game.network.onRespawnConfirmed = (data: any) => {
+            const localPlayer = game.playerManager.getLocalPlayer();
+            if (localPlayer && localPlayer.playerId === data.playerId) {
+                setIsDead(false);
+            }
         };
 
     }, [game]);

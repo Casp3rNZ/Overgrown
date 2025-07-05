@@ -51,6 +51,10 @@ class Game {
             this.playerManager.handlePlayerDeath(playerId);
         }
 
+        this.network.onRespawnConfirmed = (data: any) => {
+            this.playerManager.respawnPlayer(data.playerId);
+        }
+
         window.addEventListener("resize", () => {
             this.engine.resize();
         });
