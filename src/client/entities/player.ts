@@ -4,6 +4,7 @@ import { PlayerInput, PlayerState } from "../../shared/movement";
 import { NetworkClient } from "../network/clientNetwork";
 import { StateInterpolator } from "./stateInterpolator";
 import { ViewModel } from "./viewModel";
+import { playSpacialSound } from "../sound/audioEngine";
 
 export class Player {
     public playerModel: AbstractMesh;
@@ -125,6 +126,8 @@ export class Player {
 
     public handleKeyboardInput(event: KeyboardEvent): void {
         if (this.isRemote) return; // Remote players don't handle input
+
+        // set keytype
         let keyType = null;
         if (event.type === "keydown") {
             keyType = true;
@@ -133,7 +136,8 @@ export class Player {
         } else {
             return; // Not a key event we handle
         }
-        console.log("Key event:", event.key, "dead", this.dead);
+
+        // Handle death state
         if (this.dead == true && keyType == true) {
             if (event.key == " "){
                 this.network.sendRespawnRequest();
@@ -208,11 +212,15 @@ export class Player {
                 if(event.button == 0 && this.viewModel) { // Left mouse button
                     // request client side shot to check animation/fire state, if returned true, send request to server. 
                     if (this.viewModel.shoot()) {
+                        // Network
                         let directionVector = this.getDirectionFromRotation(this.collisionMesh.rotation.y, this.camera.rotation.x);
                         let originPos = this.collisionMesh.position.add(new Vector3(0, .6, 0)); // Position at head height
                         this.network.sendShootRequest(originPos, directionVector);
 
-                        // draw debug line 
+                        // Trigger local sound
+                        playSpacialSound("coltShot", originPos, 1, scene);
+
+                        // Debug
                         const endPos = originPos.add(directionVector.scale(100)); // 100 units forward
                         const DEBUG_shootLine = MeshBuilder.CreateLines("DEBUG_shootLine", {
                             points: [originPos, endPos],
@@ -220,8 +228,8 @@ export class Player {
                         }, scene);
                         DEBUG_shootLine.color = new Color3(1, 0, 0); // Red color for debug
                         setTimeout(() => {
-                            DEBUG_shootLine.dispose(); // Remove after 1 second
-                        }, 10000);
+                            DEBUG_shootLine.dispose(); // Remove after 2 second
+                        }, 2000);
                     }
                 }
             }
