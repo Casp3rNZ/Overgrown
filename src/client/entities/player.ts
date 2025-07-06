@@ -218,7 +218,7 @@ export class Player {
                         this.network.sendShootRequest(originPos, directionVector);
 
                         // Trigger local sound
-                        playSpacialSound("coltShot", originPos, 1, scene);
+                        playSpacialSound("coltShot", this.collisionMesh, 1, scene);
 
                         // Debug
                         const endPos = originPos.add(directionVector.scale(100)); // 100 units forward

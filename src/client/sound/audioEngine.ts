@@ -1,26 +1,44 @@
-import {Sound, Vector3} from "@babylonjs/core/"
+import { Vector3, CreateSoundAsync, CreateSoundBufferAsync, Mesh, CreateAudioEngineAsync } from "@babylonjs/core/"
 
 const SOUND_DIR = "/assets/sounds/"
-// not working and i cant figure out why
-export async function playSpacialSound(type: string, pos: {x: number, y: number, z: number}, volume: number = 1, scene: any) {
-    // Create a new sound instance
-    const soundfile = `${SOUND_DIR}guns/${type}.mp3`;
-    const response = await fetch(soundfile);
-    if (!response.ok) { // this is working
-        console.error(`Failed to load sound file: ${soundfile}`);
-        return;
-    }else{
-        console.log(`Sound file loaded successfully: ${response.status} ${response.statusText}`);
+let audioEngineIsActive = false;
+let soundBuffers: Record<string, any> = {};
+let audioEngine: any = null;
+
+// not being called yet
+export async function initAudioEngine() {
+    if (audioEngineIsActive) return;
+    audioEngineIsActive = true;
+
+    if (!audioEngine) {
+        audioEngine = await CreateAudioEngineAsync();
+        await audioEngine.unlockAsync();
     }
 
-    console.log(`Playing sound: ${type} from ${soundfile} at position:`, pos);
-    const sound = new Sound(type, soundfile, scene, null, {
-        spatialSound: false, // function is triggering but cannot hear sound for some reason
-        volume: volume,
-        maxDistance: 100, 
-        rolloffFactor: 1, 
-    });
+    // preload all sounds for now
+    const baseSounds = ["coltShot", "emptyMag"]
+    for (const sound of baseSounds) {
+        const soundfile = `${SOUND_DIR}guns/${sound}.mp3`;
+        soundBuffers[sound] = await CreateSoundBufferAsync(soundfile);
+    }
+}
 
-    sound.setPosition(new Vector3(pos.x, pos.y, pos.z));
+export async function playSpacialSound(type: string, mesh: Mesh, volume: number = 1, scene: any) {
+    const soundfile = `${SOUND_DIR}guns/${type}.mp3`;
+    const buffer = soundBuffers[soundfile];
+    if (!buffer) {
+        console.warn(`Sound buffer '${type}' not found`);
+        //soundBuffers[type] = await CreateSoundBufferAsync(soundfile);
+        return;
+    }
+    const sound = await CreateSoundAsync(type, buffer, {
+        spatialEnabled: true,
+        volume: volume,
+        loop: false,
+        spatialMaxDistance: 100,
+        spatialDistanceModel: "exponential",
+        spatialRolloffFactor: 1
+    }, scene);
+    sound.spatial.attach(mesh);
     sound.play();
 }

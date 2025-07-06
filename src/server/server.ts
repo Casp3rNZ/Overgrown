@@ -282,8 +282,8 @@ function handlePlayerHitDetection(
                     }));
                 }
             });
-            return; // Player is dead, no further processing needed
-        }  // not implemented on clientside yet.
+            return; // Player is dead
+        }
         
         // send hit back to clients
         wss.clients.forEach(client => {
