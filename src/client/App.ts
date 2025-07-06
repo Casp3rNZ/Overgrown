@@ -28,6 +28,7 @@ class Game {
 
         this.network.onReady = (playerId: string) => {
             const localPlayer = this.playerManager.createLocalPlayer(playerId);
+            // Babylon automatically uses activeCamera as the audio listener
             this.scene.activeCamera = localPlayer.camera;
             this.lastTickTime = performance.now();
 

@@ -1,4 +1,4 @@
-import { WebSocketServer } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import { simulatePlayerMovement, PlayerState, PlayerInput } from "../shared/movement.js";
 import { handleCollisions } from "../shared/collision.js";
 import { Vector3, Ray } from "@babylonjs/core";
@@ -15,16 +15,19 @@ console.log("Overgrown - WSS listening on ws://localhost:8080");
 const wss = new WebSocketServer({ 
     port: 8080 
 });
+interface PlayerWebSocket extends WebSocket {
+    playerId?: string;
+}
 var players: Record<string, PlayerState> = {};
 
 function generateId() {
     return Math.random().toString(36).substr(2, 9);
 }
 
-wss.on("connection", (ws) => {
+(wss as WebSocketServer).on("connection", (ws: PlayerWebSocket) => {
     console.log("New player connected");
     const id = generateId();
-
+    ws.playerId = id; // Attach playerId to the ws object
     // broadcast to all clients that a new player has joined
     wss.clients.forEach(client => {
         if (client.readyState == 1) {
@@ -112,6 +115,20 @@ wss.on("connection", (ws) => {
     // Send the player's ID
     ws.send(JSON.stringify({ type: "init", id }));
 });
+
+function broadcastSoundAtPositionFromPlayer(soundType: string, position: Vector3, playerId: string) {
+    // to test and implement in all other player actioned broadcasts.
+    wss.clients.forEach(client => {
+        const c = client as PlayerWebSocket;
+        if (c.readyState === 1 && c.playerId !== playerId) {
+            c.send(JSON.stringify({
+                type: "sound",
+                soundType: soundType,
+                position: position,
+            }));
+        }
+    });
+}
 
 // Game loop
 function startTPSLoop(TPS: number) {

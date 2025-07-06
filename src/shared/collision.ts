@@ -22,9 +22,9 @@ export const staticColliders: CollisionObject[] = [
 
 // Player collision box size
 export const PLAYER_SIZE = {
-    width: 1,
+    width: 0.5,
     height: 2,
-    depth: 1
+    depth: 0.5
 };
 
 // Check collision between two boxes
