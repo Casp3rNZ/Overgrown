@@ -1,13 +1,12 @@
 import { Vector3, CreateSoundAsync, CreateSoundBufferAsync, Mesh, CreateAudioEngineAsync } from "@babylonjs/core/"
 
-// sounds are working, but audiolistener position is not updating correctly
-
-const SOUND_DIR = "/assets/sounds/"
+// sounds are working, but audiolistener position is not updating correctly for spatial sounds.
 let soundBuffers: Record<string, any> = {};
 let audioEngine: any = null;
 
 export async function initAudioEngine() {
     if (audioEngine) return;
+    const SOUND_DIR = "/assets/sounds/"
     audioEngine = await CreateAudioEngineAsync();
     await audioEngine.unlockAsync();
 
@@ -36,7 +35,22 @@ export async function playSpacialSound(type: string, mesh: Mesh, volume: number 
         spatialRolloffFactor: 1
     }, audioEngine);
     sound.spatial.attach(mesh);
-    //sound.spatial.position = mesh.getAbsolutePosition();
-    console.log(`Playing sound: ${type} at ${sound.spatial.position}`);
+    //sound.spatial.absoluteposition = mesh.getAbsolutePosition();
+    console.log(`Playing sound: ${type} at ${mesh.getAbsolutePosition()}`);
+    sound.play();
+}
+
+export async function playSound(type: string, volume: number = 1) {
+    if (!audioEngine) return;
+    const buffer = soundBuffers[type];
+    if (!buffer) {
+        console.warn(`Sound buffer '${type}' not found`);
+        return;
+    }
+    const sound = await CreateSoundAsync(type, buffer, {
+        spatialEnabled: false,
+        volume: volume,
+        loop: false
+    }, audioEngine);
     sound.play();
 }

@@ -75,7 +75,6 @@ export class Player {
         }, scene);
         this.collisionMesh.position.y = 5;
         this.collisionMesh.checkCollisions = true;
-        // make it semi transparent for debugging
         this.collisionMesh.visibility = 0.5;
         this.collisionMesh.isVisible = false;
     }
@@ -259,7 +258,7 @@ export class Player {
                 interpolatedState.position.y,
                 interpolatedState.position.z
             );
-        }        
+        }
         // Update viewmodel bobbing for local player
         if (!this.isRemote && this.viewModel) {
             const isMoving = this.input.forward || this.input.backward || this.input.left || this.input.right;
