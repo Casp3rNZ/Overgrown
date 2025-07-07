@@ -5,6 +5,7 @@ import Game from "../App";
 import { render } from "preact";
 import { HUD } from "./HUD";
 import { DeathScreen } from "./deathScreen";
+import { initAudioEngine } from "../sound/audioEngine";
 
 export function UIRoot({ game }) {
     const [chatVisible, setChatVisible] = useState(true);
@@ -29,6 +30,7 @@ export function UIRoot({ game }) {
             if (document.pointerLockElement === canvas) {
                 return; // Already locked
             }
+            initAudioEngine()
             canvas.requestPointerLock();
         };
         canvas.addEventListener("click", handleCanvasClick);
@@ -44,11 +46,11 @@ export function UIRoot({ game }) {
 
         const handleEscape = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
-                document.exitPointerLock();
-                // if game is not focused, refocus canvas
-                if (document.pointerLockElement !== canvas) {
+                if (document.pointerLockElement == chatInputRef.current) {
                     canvas.focus();
                     canvas.requestPointerLock();
+                }else {
+                    document.exitPointerLock();
                 }
             }
         };

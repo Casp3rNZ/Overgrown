@@ -39,15 +39,11 @@ export class Player {
         this.isRemote = isRemote;
         this.stateInterpolator = new StateInterpolator();
         this.createPlayerCollisionMesh(scene);
-        this.createCamera(scene);
-        
         if (!isRemote) {
             this.createCamera(scene);
-            this.camera.fov = Tools.ToRadians(90);
-            this.camera.minZ = 0.1;
             this.setupMouseInput(scene);
             this.viewModel = new ViewModel(scene, this.camera);
-            this.viewModel.loadGunModel(this.input.equippedItemID)
+            this.viewModel.loadGunModel(0)
         } else {
             this.createplayerModel(scene)
         }
@@ -102,7 +98,10 @@ export class Player {
         this.camera.rotation.z = 0;
         this.camera.position = new Vector3(0, 0.6, 0); // Position at head height
         this.camera.applyGravity = false; // We handle gravity in movement system
+        this.camera.fov = Tools.ToRadians(90);
+        this.camera.minZ = 0.01;
         //this.camera.ellipsoid = new Vector3(0.5, 0.5, 0.5);
+        scene.activeCamera = this.camera;
     }
 
     public respawn(): void {
@@ -205,37 +204,16 @@ export class Player {
             }
         });
 
+        // Windows mouse down event
         window.addEventListener("mousedown", (event) => {
-            if (this.dead) return; // Ignore input if dead
-            if (this.isRemote) return;
-            if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
-                if(event.button == 0 && this.viewModel) { // Left mouse button
-                    // request client side shot to check animation/fire state, if returned true, send request to server. 
-                    if (this.viewModel.shoot()) {
-                        // Network
-                        let directionVector = this.getDirectionFromRotation(this.collisionMesh.rotation.y, this.camera.rotation.x);
-                        let originPos = this.collisionMesh.position.add(new Vector3(0, .6, 0)); // Position at head height
-                        this.network.sendShootRequest(originPos, directionVector);
-
-                        // Trigger local sound
-                        playSpacialSound("coltShot", this.collisionMesh, 1, scene);
-
-                        // Debug
-                        const endPos = originPos.add(directionVector.scale(100)); // 100 units forward
-                        const DEBUG_shootLine = MeshBuilder.CreateLines("DEBUG_shootLine", {
-                            points: [originPos, endPos],
-                            updatable: true,
-                        }, scene);
-                        DEBUG_shootLine.color = new Color3(1, 0, 0); // Red color for debug
-                        setTimeout(() => {
-                            DEBUG_shootLine.dispose(); // Remove after 2 second
-                        }, 2000);
-                    }
-                }
-            }
+            this.handleMouseButtonEvent(event, scene);
         });
 
-        // not handling mouseup input / full auto for now.
+        // Linux mouse down event
+        window.addEventListener("pointerdown", (event) => {
+            this.handleMouseButtonEvent(event, scene);
+        });
+        
     }
 
     // Called every frame
@@ -302,6 +280,35 @@ export class Player {
             this.playAnimation("strafeR");
         }else {
             this.playAnimation("idle");
+        }
+    }
+
+    private handleMouseButtonEvent(event: any, scene: Scene): void {
+        if (this.dead) return; // Ignore input if dead
+        if (this.isRemote) return;
+        if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
+            if(event.button == 0 && this.viewModel) { // Left mouse button
+                // request client side shot to check animation/fire state, if returned true, send request to server. 
+                if (this.viewModel.shoot()) {
+                    // Network
+                    let directionVector = this.getDirectionFromRotation(this.collisionMesh.rotation.y, this.camera.rotation.x);
+                    let originPos = this.collisionMesh.position.add(new Vector3(0, .6, 0)); // Position at head height
+                    this.network.sendShootRequest(originPos, directionVector);
+
+                    // Trigger local sound
+                    playSpacialSound("coltShot", this.collisionMesh, 1);
+                    // Debug
+                    const endPos = originPos.add(directionVector.scale(100)); // 100 units forward
+                    const DEBUG_shootLine = MeshBuilder.CreateLines("DEBUG_shootLine", {
+                        points: [originPos, endPos],
+                        updatable: true,
+                    }, scene);
+                    DEBUG_shootLine.color = new Color3(1, 0, 0); // Red color for debug
+                    setTimeout(() => {
+                        DEBUG_shootLine.dispose(); // Remove after 2 second
+                    }, 2000);
+                }
+            }
         }
     }
 

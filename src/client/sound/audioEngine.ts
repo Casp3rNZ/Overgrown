@@ -1,34 +1,30 @@
 import { Vector3, CreateSoundAsync, CreateSoundBufferAsync, Mesh, CreateAudioEngineAsync } from "@babylonjs/core/"
 
+// sounds are working, but audiolistener position is not updating correctly
+
 const SOUND_DIR = "/assets/sounds/"
-let audioEngineIsActive = false;
 let soundBuffers: Record<string, any> = {};
 let audioEngine: any = null;
 
-// not being called yet
 export async function initAudioEngine() {
-    if (audioEngineIsActive) return;
-    audioEngineIsActive = true;
-
-    if (!audioEngine) {
-        audioEngine = await CreateAudioEngineAsync();
-        await audioEngine.unlockAsync();
-    }
+    if (audioEngine) return;
+    audioEngine = await CreateAudioEngineAsync();
+    await audioEngine.unlockAsync();
 
     // preload all sounds for now
     const baseSounds = ["coltShot", "emptyMag"]
     for (const sound of baseSounds) {
         const soundfile = `${SOUND_DIR}guns/${sound}.mp3`;
         soundBuffers[sound] = await CreateSoundBufferAsync(soundfile);
+        console.log(`Preloaded sound: ${sound}`);
     }
 }
 
-export async function playSpacialSound(type: string, mesh: Mesh, volume: number = 1, scene: any) {
-    const soundfile = `${SOUND_DIR}guns/${type}.mp3`;
-    const buffer = soundBuffers[soundfile];
+export async function playSpacialSound(type: string, mesh: Mesh, volume: number = 1) {
+    if (!audioEngine) return;
+    const buffer = soundBuffers[type];
     if (!buffer) {
         console.warn(`Sound buffer '${type}' not found`);
-        //soundBuffers[type] = await CreateSoundBufferAsync(soundfile);
         return;
     }
     const sound = await CreateSoundAsync(type, buffer, {
@@ -38,7 +34,9 @@ export async function playSpacialSound(type: string, mesh: Mesh, volume: number 
         spatialMaxDistance: 100,
         spatialDistanceModel: "exponential",
         spatialRolloffFactor: 1
-    }, scene);
+    }, audioEngine);
     sound.spatial.attach(mesh);
+    //sound.spatial.position = mesh.getAbsolutePosition();
+    console.log(`Playing sound: ${type} at ${sound.spatial.position}`);
     sound.play();
 }

@@ -4,6 +4,7 @@ export class ViewModel {
     public gunMesh: AbstractMesh | null = null;
     private bobTime: number = 0;
     private equippedGunID:  number = 0;
+    private muzzleEnd: any = null; 
 
     // IK LEGEND FOR GUN MODELS:
     // Left hand grip = "IK_Grip_L"
@@ -46,6 +47,11 @@ export class ViewModel {
                 EQUIPPABLES[id].viewmodel.offset_y,
                 EQUIPPABLES[id].viewmodel.offset_z
             );
+
+            // load mount points for IK
+            this.muzzleEnd = this.gunMesh.getChildMeshes().find(mesh => mesh.name === "Muzzle_Origin");
+            console.log("Muzzle end loaded:", this.muzzleEnd?.name);
+
             console.log("Gun model loaded successfully:", this.gunMesh.name);
         } catch (error) {
             console.error("Error loading gun model:", error);
