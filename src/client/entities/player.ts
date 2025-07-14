@@ -298,8 +298,10 @@ export class Player {
                     let gunSound = EQUIPPABLES[this.input.equippedItemID].fireSound;
                     //playSound(gunSound, 1);
                     playSpacialSound(gunSound, this.collisionMesh);
+
                     // Trigger local animations
                     this.viewModel.shoot(scene);
+                    
                     // Debug
                     const endPos = originPos.add(directionVector.scale(100)); // 100 units forward
                     const DEBUG_shootLine = MeshBuilder.CreateLines("DEBUG_shootLine", {
