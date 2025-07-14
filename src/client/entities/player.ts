@@ -1,6 +1,6 @@
 import "@babylonjs/loaders/glTF";
-import { Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools, AnimationGroup, ImportMeshAsync, AbstractMesh, Color3 } from "@babylonjs/core";
-import { PlayerInput, PlayerState } from "../../shared/movement";
+import { TransformNode, Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools, AnimationGroup, ImportMeshAsync, AbstractMesh, Color3 } from "@babylonjs/core";
+import { PlayerInput } from "../../shared/movement";
 import { NetworkClient } from "../network/clientNetwork";
 import { StateInterpolator } from "./stateInterpolator";
 import { ViewModel } from "./viewModel";
@@ -30,17 +30,19 @@ export class Player {
     private network: NetworkClient;
     public playerId: string;
     public health: number = 100;
-    private isRemote: boolean;
+    public isRemote: boolean;
     private lastInput: PlayerInput | null = null;
+    public gunMesh: AbstractMesh | null = null;
+    public muzzleEnd: TransformNode | null = null;
 
     constructor(scene: Scene, network: NetworkClient, playerId: string, isRemote: boolean = false) {
         this.playerId = playerId;
-        this.scene = scene;
         this.network = network;
         this.isRemote = isRemote;
         this.stateInterpolator = new StateInterpolator();
         this.createPlayerCollisionMesh(scene);
         if (!isRemote) {
+            this.scene = scene;
             this.createCamera(scene);
             this.setupMouseInput(scene);
             this.viewModel = new ViewModel(scene, this.camera);
@@ -51,8 +53,15 @@ export class Player {
     }
 
     private async createplayerModel(scene: Scene): Promise<void> {
+        if (!this.isRemote) {
+            console.error("createplayerModel should not be called for local player.");
+            return;
+        }
         // Load GLB model and parent to collision mesh
-        const result = await ImportMeshAsync("/assets/playerModels/testPlayer.glb", scene);
+        let result = await ImportMeshAsync("/assets/playerModels/testPlayer.glb", scene);
+        if (!result.meshes) {
+            throw new Error(`Remote Player Model - Error loading remote player model`);
+        }
         this.playerModel = result.meshes[0];
         this.playerModel.parent = this.collisionMesh;
         this.playerModel.position = new Vector3(0, -1, 0);
@@ -63,6 +72,9 @@ export class Player {
         });
 
         this.playAnimation["idle"]
+
+        // PRE-IK remote player weapon handling
+        this.loadRemotePlayerGunModel(this.input.equippedItemID); 
     }
 
     private createPlayerCollisionMesh(scene: Scene){
@@ -100,7 +112,6 @@ export class Player {
         this.camera.applyGravity = false; // We handle gravity in movement system
         this.camera.fov = Tools.ToRadians(90);
         this.camera.minZ = 0.01;
-        //this.camera.ellipsoid = new Vector3(0.5, 0.5, 0.5);
         scene.activeCamera = this.camera;
     }
 
@@ -239,8 +250,16 @@ export class Player {
                 rotationY: me.rotationY,
             });
 
-            if (this.isRemote) {
-                this.input = { ...me.input }; // for remote player animation handling
+            if (this.isRemote) {                
+                // Update equipped item
+                console.log(`input: ${this.input.equippedItemID}, me: ${me.input.equippedItemID}`);
+                if (this.input.equippedItemID != me.input.equippedItemID) {
+                    this.input.equippedItemID = me.input.equippedItemID;
+                    this.loadRemotePlayerGunModel(this.input.equippedItemID);
+                }
+
+                // for remote player animation handling
+                this.input = { ...me.input };
                 this.collisionMesh.rotation.y = me.input.rotationY;
                 this.isGrounded = me.isGrounded;
             }
@@ -296,8 +315,7 @@ export class Player {
 
                     // Trigger local sound
                     let gunSound = EQUIPPABLES[this.input.equippedItemID].fireSound;
-                    //playSound(gunSound, 1);
-                    playSpacialSound(gunSound, this.collisionMesh);
+                    playSound(gunSound);
 
                     // Trigger local animations
                     this.viewModel.shoot(scene);
@@ -328,5 +346,46 @@ export class Player {
             y / length, 
             z / length
         );
+    }
+
+    private async loadRemotePlayerGunModel(equippedItemID: number): Promise<void> {
+        console.log(`Loading remote player gun model for equippedItemID: ${equippedItemID}`);
+        let result = await ImportMeshAsync(EQUIPPABLES[equippedItemID].modelPath, this.scene);
+        if (!result.meshes) {
+            throw new Error(`Remote Player Guns - No meshes found in EQUIPPABLES for key: ${equippedItemID}`);
+        }
+        if (this.gunMesh) {
+            this.gunMesh.dispose();
+        }
+        this.gunMesh = result.meshes[0];
+        this.gunMesh.parent = this.playerModel;
+        this.gunMesh.isPickable = false; // not prone to physics or raycasting
+        this.gunMesh.position = new Vector3(-0.1, 1.4, 0.4)
+        this.gunMesh.rotation = new Vector3(0, Math.PI / -2, 0); // Fix blender import rotation (rotation is 90 degrees off)
+        this.muzzleEnd = this.gunMesh.getChildTransformNodes().find(node => node.name == "Muzzle_Origin");
+    }
+
+    public playSoundOnPlayer(soundType: string, volume: number = 1): void {
+        switch (soundType) {
+            case "gunshot":
+                if (this.gunMesh) {
+                    playSpacialSound(EQUIPPABLES[this.input.equippedItemID].fireSound, this.gunMesh, volume);
+                } else {
+                    console.warn(`Gun mesh not found for player ${this.playerId}.`);
+                }
+                break;
+            case "footstep":
+                // Handle footstep sound
+                break;
+            case "reload":
+                // Handle reload sound
+                break;
+            case "hit":
+                // Handle hit sound
+                break;
+            default:
+                console.warn(`Unknown sound type: ${soundType}`);
+                break;
+        }
     }
 }

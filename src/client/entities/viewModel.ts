@@ -87,10 +87,10 @@ export class ViewModel {
         }
     }
 
-    private playMuzzleFlash(scene: Scene, muzzleEnd: any) {
+    public playMuzzleFlash(scene: Scene, muzzleEnd: any) {
         if (!muzzleEnd) return;
 
-        // math.random min max = math.random() * (max - min) + min
+        // math.random min max = math.ran
 
         // Create a small plane for the flash
         const flashMesh = MeshBuilder.CreatePlane("muzzleFlash", { size: Math.random() * (0.5 - 0.8) + 0.5}, scene);

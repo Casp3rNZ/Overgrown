@@ -13,6 +13,7 @@ export class NetworkClient {
     public onPlayerDeath: (playerId: string) => void = () => {};
     public onPlayerHit: (playerId: string, damage: number) => void = () => {};
     public onRespawnConfirmed: (data: any) => void = () => {};
+    public onSoundFromServer: (data: any) => void = () => {};
     private lastInput: any = null;
 
     constructor(url: string) {
@@ -23,7 +24,6 @@ export class NetworkClient {
     private connect() {
         try {
             this.socket = new WebSocket(this.url);
-
             this.socket.onopen = () => {
                 console.log("Connected to server.");
                 this.reconnectAttempts = 0;
@@ -53,7 +53,6 @@ export class NetworkClient {
                         }
                         break;
                     case "death":
-                        console.log("Player death event received:", data);
                         this.onPlayerDeath(data);
                         break;
                     case "hit":
@@ -61,6 +60,9 @@ export class NetworkClient {
                         break;
                     case "respawnConfirmed":
                         this.onRespawnConfirmed(data);
+                        break;
+                    case "soundFromServer":
+                        this.onSoundFromServer(data);
                         break;
                 }
             };

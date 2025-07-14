@@ -1,13 +1,13 @@
-import { CreateSoundAsync, CreateSoundBufferAsync, Mesh, CreateAudioEngineAsync } from "@babylonjs/core/"
+import { Scene, AudioEngineV2, CreateSoundAsync, CreateSoundBufferAsync, Mesh, CreateAudioEngineAsync, SpatialAudioAttachmentType, AbstractMesh } from "@babylonjs/core/"
 
-// sounds are working, but audiolistener position is not updating correctly for spatial sounds.
 let soundBuffers: Record<string, any> = {};
-let audioEngine: any = null;
+let audioEngine: AudioEngineV2;
 
-export async function initAudioEngine() {
+export async function initAudioEngine(scene: Scene) {
     if (audioEngine) return;
     const SOUND_DIR = "/assets/sounds/"
-    audioEngine = await CreateAudioEngineAsync();
+    audioEngine = await CreateAudioEngineAsync({
+    });
     await audioEngine.unlockAsync();
 
     // preload all sounds for now
@@ -17,13 +17,14 @@ export async function initAudioEngine() {
         soundBuffers[sound] = await CreateSoundBufferAsync(soundfile);
         console.log(`Preloaded sound: ${sound}`);
     }
+    // Need to manually set the audio listener to the active camera.
+    // Usually BabylonJS does this automatically, but i suspect this is a bug because scene.activeCamera is parented to a mesh that has its position "hard-coded" by our custom movement physics updates.
+    // Possibly will be fixed in future.
+    audioEngine.listener.attach(scene.activeCamera);
 }
 
-export async function playSpacialSound(type: string, mesh: Mesh, volume: number = 1) {
+export async function playSpacialSound(type: string, mesh: Mesh | AbstractMesh, volume: number = 1) {
     // Spacial sound is currently kind of fucked.
-    // The default audio listener position is working and updating corretcly however, the sound position is not updating correctly.
-    // sound.spatial.position is 0 0 0, while player mesh's are being passed correctly, mesh.getAbsolutePosition returns the correct Vector.
-    // sound.spatial.isattached also returns true before the sound is played, as it should. 
     if (!audioEngine) return;
     const buffer = soundBuffers[type];
     if (!buffer) {
@@ -34,12 +35,11 @@ export async function playSpacialSound(type: string, mesh: Mesh, volume: number 
         spatialEnabled: true,
         volume: volume,
         loop: false,
-        spatialMaxDistance: 100,
+        spatialMaxDistance: 50,
         spatialDistanceModel: "linear",
-        spatialRolloffFactor: 1
+        spatialRolloffFactor: 1,
     }, audioEngine);
-    sound.spatial.attach(mesh);
-    console.log("sound position:", sound.spatial.position);
+    sound.spatial.attach(mesh, false, SpatialAudioAttachmentType.Position);
     sound.play();
 }
 

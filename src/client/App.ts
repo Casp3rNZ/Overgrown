@@ -59,6 +59,10 @@ class Game {
             if (this.setIsDead && this.playerManager.getLocalPlayer().playerId == data.playerId) this.setIsDead(false); // Reset death state in UI
         }
 
+        this.network.onSoundFromServer = (data: any) => {
+            this.playerManager.playSoundOnPlayer(data.playerID, data.soundType);
+        };
+
         window.addEventListener("resize", () => {
             this.engine.resize();
         });

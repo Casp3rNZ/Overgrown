@@ -30,7 +30,7 @@ export function UIRoot({ game }) {
             if (document.pointerLockElement === canvas) {
                 return; // Already locked
             }
-            initAudioEngine()
+            initAudioEngine(game.scene);
             canvas.requestPointerLock();
         };
         canvas.addEventListener("click", handleCanvasClick);

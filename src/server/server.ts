@@ -85,6 +85,17 @@ function generateId() {
                     break;
                 case "shoot":
                     handlePlayerHitDetection(id, data);
+                    // broadcast sound to all clients
+                    (wss as WebSocketServer).clients.forEach((client: PlayerWebSocket) => {
+                        if (client.readyState == 1 && client.playerId !== id) {
+                            client.send(JSON.stringify({
+                                type: "soundFromServer",
+                                equipID: data.equipID,
+                                soundType: "gunshot",
+                                playerID: data.playerId,
+                            }))
+                        }
+                    });
                     break;
                 case "respawnRequest":
                     if (players[id].dead) {

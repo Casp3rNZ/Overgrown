@@ -1,6 +1,8 @@
 import { Scene } from "@babylonjs/core";
 import { NetworkClient } from "../network/clientNetwork";
 import { Player } from "./player";
+import { playSpacialSound } from "../sound/audioEngine";
+import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION";
 
 export class PlayerManager {
     private players: Map<string, Player>;
@@ -108,7 +110,6 @@ export class PlayerManager {
     }
 
     public damagePlayer(playerId: string, damage: number): void {
-        console.log(`Applying ${damage} damage to player ${playerId}`);
         const player = this.players.get(playerId);
         if (player) {
             player.health -= damage;
@@ -137,6 +138,17 @@ export class PlayerManager {
             console.log(`Player ${playerId} has respawned.`);
         } else {
             console.warn(`Player ${playerId} not found for respawn.`);
+        }
+    }
+
+    public playSoundOnPlayer(playerId: string, soundType: string, volume: number = 1): void {
+        let player = this.players.get(playerId);
+        if (!player) {
+            console.warn(`Player ${playerId} not found for sound playback.`);
+            return;
+        }
+        if (player.isRemote) {
+            player.playSoundOnPlayer(soundType, volume);
         }
     }
 } 
