@@ -1,4 +1,4 @@
-import { Scene, AbstractMesh, ImportMeshAsync, Vector3 } from "@babylonjs/core";
+import { Scene, AbstractMesh, ImportMeshAsync, Vector3, MeshBuilder, Color3, StandardMaterial, PointLight } from "@babylonjs/core";
 import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION.js";
 export class ViewModel {
     public gunMesh: AbstractMesh | null = null;
@@ -49,10 +49,7 @@ export class ViewModel {
             );
 
             // load mount points for IK
-            this.muzzleEnd = this.gunMesh.getChildMeshes().find(mesh => mesh.name === "Muzzle_Origin");
-            console.log("Muzzle end loaded:", this.muzzleEnd?.name);
-
-            console.log("Gun model loaded successfully:", this.gunMesh.name);
+            this.muzzleEnd = this.gunMesh.getChildTransformNodes().find(node => node.name == "Muzzle_Origin");
         } catch (error) {
             console.error("Error loading gun model:", error);
         }
@@ -80,14 +77,59 @@ export class ViewModel {
         );
     }
 
-    public shoot(): any {
-        if (!this.gunMesh) {
-            console.warn("No gun mesh loaded to shoot.");
-            return false
+    public isReadyToShoot(): boolean {
+        if (!this.gunMesh || !this.muzzleEnd || this.equippedGunID) 
+        {
+            console.warn("No gun mesh loaded to check readiness.");
+            return false;
+        } else {
+            return true;
         }
+    }
 
-        // perform client side animation for shooting
-        
+    private playMuzzleFlash(scene: Scene, muzzleEnd: any) {
+        if (!muzzleEnd) return;
+
+        // math.random min max = math.random() * (max - min) + min
+
+        // Create a small plane for the flash
+        const flashMesh = MeshBuilder.CreatePlane("muzzleFlash", { size: Math.random() * (0.5 - 0.8) + 0.5}, scene);
+        flashMesh.parent = muzzleEnd;
+        flashMesh.rotation = new Vector3(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            Math.random() * Math.PI
+        );
+
+        // Playing with emissive matt planes
+        const flashMat = new StandardMaterial("muzzleFlashMat", scene);
+        flashMat.emissiveColor = new Color3(1, 0.9 + Math.random() * 0.1, 0.6 + Math.random() * 0.2);
+        flashMat.disableLighting = false;
+        flashMesh.material = flashMat;
+
+        // Basic light flash
+        const flashLight = new PointLight("muzzleFlashLight", muzzleEnd.getAbsolutePosition(), scene);
+        flashLight.diffuse = new Color3(1, 0.8, 0.6);
+        flashLight.intensity = 0.5;
+        flashLight.range = 10;
+
+        // Remove flash after a short time
+        setTimeout(() => {
+            flashMesh.dispose();
+            flashLight.dispose();
+        }, 50);
+}
+
+    public shoot(scene: Scene): any {
+        // Muzzle Flash
+        this.playMuzzleFlash(scene, this.muzzleEnd);
+
+        // Recoil effect
+
+        // Barrel Smoke
+
+        // Bullet Cartridge Eject
+
         return true;
     }
 

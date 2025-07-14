@@ -4,7 +4,8 @@ import { PlayerInput, PlayerState } from "../../shared/movement";
 import { NetworkClient } from "../network/clientNetwork";
 import { StateInterpolator } from "./stateInterpolator";
 import { ViewModel } from "./viewModel";
-import { playSpacialSound } from "../sound/audioEngine";
+import { playSpacialSound, playSound } from "../sound/audioEngine";
+import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION";
 
 export class Player {
     public playerModel: AbstractMesh;
@@ -203,12 +204,11 @@ export class Player {
             }
         });
 
-        // Windows mouse down event
-        window.addEventListener("mousedown", (event) => {
-            this.handleMouseButtonEvent(event, scene);
-        });
+        // Deprecated: Use pointerdown instead for better compatibility
+        //window.addEventListener("mousedown", (event) => {
+        //    this.handleMouseButtonEvent(event, scene);
+        //});
 
-        // Linux mouse down event
         window.addEventListener("pointerdown", (event) => {
             this.handleMouseButtonEvent(event, scene);
         });
@@ -288,14 +288,18 @@ export class Player {
         if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
             if(event.button == 0 && this.viewModel) { // Left mouse button
                 // request client side shot to check animation/fire state, if returned true, send request to server. 
-                if (this.viewModel.shoot()) {
+                if (this.viewModel.isReadyToShoot()) {
                     // Network
                     let directionVector = this.getDirectionFromRotation(this.collisionMesh.rotation.y, this.camera.rotation.x);
                     let originPos = this.collisionMesh.position.add(new Vector3(0, .6, 0)); // Position at head height
                     this.network.sendShootRequest(originPos, directionVector);
 
                     // Trigger local sound
-                    playSpacialSound("coltShot", this.collisionMesh, 1);
+                    let gunSound = EQUIPPABLES[this.input.equippedItemID].fireSound;
+                    //playSound(gunSound, 1);
+                    playSpacialSound(gunSound, this.collisionMesh);
+                    // Trigger local animations
+                    this.viewModel.shoot(scene);
                     // Debug
                     const endPos = originPos.add(directionVector.scale(100)); // 100 units forward
                     const DEBUG_shootLine = MeshBuilder.CreateLines("DEBUG_shootLine", {

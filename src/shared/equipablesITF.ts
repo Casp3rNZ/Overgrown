@@ -20,6 +20,7 @@ interface Equipable {
         bob_amt_vert: number;
         bob_lower_amt: number;
     }
+    fireSound: string;
 }
 
 export interface Gun extends Equipable {
