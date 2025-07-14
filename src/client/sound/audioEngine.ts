@@ -1,4 +1,4 @@
-import { Vector3, CreateSoundAsync, CreateSoundBufferAsync, Mesh, CreateAudioEngineAsync } from "@babylonjs/core/"
+import { CreateSoundAsync, CreateSoundBufferAsync, Mesh, CreateAudioEngineAsync } from "@babylonjs/core/"
 
 // sounds are working, but audiolistener position is not updating correctly for spatial sounds.
 let soundBuffers: Record<string, any> = {};
@@ -20,10 +20,14 @@ export async function initAudioEngine() {
 }
 
 export async function playSpacialSound(type: string, mesh: Mesh, volume: number = 1) {
+    // Spacial sound is currently kind of fucked.
+    // The default audio listener position is working and updating corretcly however, the sound position is not updating correctly.
+    // sound.spatial.position is 0 0 0, while player mesh's are being passed correctly, mesh.getAbsolutePosition returns the correct Vector.
+    // sound.spatial.isattached also returns true before the sound is played, as it should. 
     if (!audioEngine) return;
     const buffer = soundBuffers[type];
     if (!buffer) {
-        console.warn(`Sound buffer '${type}' not found`);
+        console.error(`Sound buffer '${type}' not found`);
         return;
     }
     const sound = await CreateSoundAsync(type, buffer, {
@@ -31,16 +35,16 @@ export async function playSpacialSound(type: string, mesh: Mesh, volume: number 
         volume: volume,
         loop: false,
         spatialMaxDistance: 100,
-        spatialDistanceModel: "exponential",
+        spatialDistanceModel: "linear",
         spatialRolloffFactor: 1
     }, audioEngine);
     sound.spatial.attach(mesh);
-    //sound.spatial.absoluteposition = mesh.getAbsolutePosition();
-    console.log(`Playing sound: ${type} at ${mesh.getAbsolutePosition()}`);
+    console.log("sound position:", sound.spatial.position);
     sound.play();
 }
 
 export async function playSound(type: string, volume: number = 1) {
+    // This function plays a non-spatial sound - working!
     if (!audioEngine) return;
     const buffer = soundBuffers[type];
     if (!buffer) {

@@ -28,6 +28,7 @@ export const EQUIPPABLES: Record<number, EquipableItem> = {
             //ammoType: ".45ACP"
         },
         modelPath: "/assets/weapons/colt.glb",
+        fireSound: "coltShot"
     },
     1: {
         type: "gun",
@@ -52,6 +53,7 @@ export const EQUIPPABLES: Record<number, EquipableItem> = {
             //ammoType: "7.62x39mm"
         },
         modelPath: "/assets/weapons/AK47.glb",
+        fireSound: "AKShot"
     }
 
 };

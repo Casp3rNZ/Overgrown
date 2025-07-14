@@ -130,6 +130,13 @@ export class NetworkClient {
             console.error("Invalid position or direction for shoot request.");
             return;
         }
+
+        let x = JSON.parse(this.lastInput);
+        if (!x) {
+            console.warn("ClientNetwork ShootReq - No equipped item ID found.", x);
+            return;
+        }
+
         // ensure "isdirty" and other props from babylonJS vectors are not sent.
         position = {
             x: position.x,
@@ -141,7 +148,6 @@ export class NetworkClient {
             y: direction.y,
             z: direction.z
         };
-        let x = JSON.parse(this.lastInput);
         this.socket.send(JSON.stringify({
             type: "shoot",
             playerId: this.playerId,
