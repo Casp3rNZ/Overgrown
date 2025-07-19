@@ -249,8 +249,8 @@ function handlePlayerHitDetection(
         // hard-coded capsule values for collision mesh to match player.ts, will replace with detailed mesh eventually.
         // Check if ray intersects with player bounding box.
         // player capsule is roughly 0.5 wide, 1.8 tall, and 0.5 deep (not accounting for edges because Babylon doesnt have builtin capsule hit detection).
-        const minBound = new Vector3(target.position.x - 0.5, target.position.y - 0.9, target.position.z - 0.5);
-        const maxBound = new Vector3(target.position.x + 0.5, target.position.y + 0.9, target.position.z + 0.5);
+        const minBound = new Vector3(target.position.x - 0.2, target.position.y - 0.6, target.position.z - 0.2);
+        const maxBound = new Vector3(target.position.x + 0.2, target.position.y + 0.6, target.position.z + 0.2);
         const intersection = ray.intersectsBoxMinMax(minBound, maxBound);
         if (intersection) {
                 const distance = Math.sqrt(

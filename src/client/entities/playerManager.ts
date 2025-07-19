@@ -148,7 +148,11 @@ export class PlayerManager {
             return;
         }
         if (player.isRemote) {
+            // sound
             player.playSoundOnPlayer(soundType, volume);
+
+            // matching VFX
+            player.remotePlayerMuzzleFlash(this.scene);
         }
     }
 } 

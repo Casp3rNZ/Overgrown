@@ -1,5 +1,5 @@
 import "@babylonjs/loaders/glTF";
-import { TransformNode, Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools, AnimationGroup, ImportMeshAsync, AbstractMesh, Color3 } from "@babylonjs/core";
+import { TransformNode, Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools, AnimationGroup, ImportMeshAsync, AbstractMesh, Color3, StandardMaterial, PointLight } from "@babylonjs/core";
 import { PlayerInput } from "../../shared/movement";
 import { NetworkClient } from "../network/clientNetwork";
 import { StateInterpolator } from "./stateInterpolator";
@@ -363,6 +363,36 @@ export class Player {
         this.gunMesh.position = new Vector3(-0.1, 1.4, 0.4)
         this.gunMesh.rotation = new Vector3(0, Math.PI / -2, 0); // Fix blender import rotation (rotation is 90 degrees off)
         this.muzzleEnd = this.gunMesh.getChildTransformNodes().find(node => node.name == "Muzzle_Origin");
+    }
+
+    public remotePlayerMuzzleFlash(scene): void {
+
+        // Copy of viewmodel muzzle flash function - dunno how to optimise this yet
+        const flashMesh = MeshBuilder.CreatePlane("muzzleFlash", { size: Math.random() * (0.5 - 0.8) + 0.5}, scene);
+        flashMesh.parent = this.muzzleEnd;
+        flashMesh.rotation = new Vector3(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            Math.random() * Math.PI
+        );
+
+        // Playing with emissive matt planes
+        const flashMat = new StandardMaterial("muzzleFlashMat", scene);
+        flashMat.emissiveColor = new Color3(1, 0.9 + Math.random() * 0.1, 0.6 + Math.random() * 0.2);
+        flashMat.disableLighting = false;
+        flashMesh.material = flashMat;
+
+        // Basic light flash
+        const flashLight = new PointLight("muzzleFlashLight", this.muzzleEnd.getAbsolutePosition(), scene);
+        flashLight.diffuse = new Color3(1, 0.8, 0.6);
+        flashLight.intensity = 0.5;
+        flashLight.range = 10;
+
+        // Remove flash after a short time
+        setTimeout(() => {
+            flashMesh.dispose();
+            flashLight.dispose();
+        }, 50);
     }
 
     public playSoundOnPlayer(soundType: string, volume: number = 1): void {
