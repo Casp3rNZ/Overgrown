@@ -321,15 +321,15 @@ export class Player {
                     this.viewModel.shoot(scene);
                     
                     // Debug
-                    const endPos = originPos.add(directionVector.scale(100)); // 100 units forward
-                    const DEBUG_shootLine = MeshBuilder.CreateLines("DEBUG_shootLine", {
-                        points: [originPos, endPos],
-                        updatable: true,
-                    }, scene);
-                    DEBUG_shootLine.color = new Color3(1, 0, 0); // Red color for debug
-                    setTimeout(() => {
-                        DEBUG_shootLine.dispose(); // Remove after 2 second
-                    }, 2000);
+                    //const endPos = originPos.add(directionVector.scale(100)); // 100 units forward
+                    //const DEBUG_shootLine = MeshBuilder.CreateLines("DEBUG_shootLine", {
+                    //    points: [originPos, endPos],
+                    //    updatable: true,
+                    //}, scene);
+                    //DEBUG_shootLine.color = new Color3(1, 0, 0); // Red color for debug
+                    //setTimeout(() => {
+                    //    DEBUG_shootLine.dispose(); // Remove after 2 second
+                    //}, 2000);
                 }
             }
         }

@@ -2,10 +2,12 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   server: {
-    port: 3000, // Custom port (optional)
-    open: true  // Auto-open browser (optional)
+    port: 3000,
+    open: true,  // Auto-open browser
+    allowedHosts: ['localhost', '192.168.4.23'],
+    host: true
   },
   build: {
-    outDir: 'dist' // Default build folder
+    outDir: 'dist'
   },
 })

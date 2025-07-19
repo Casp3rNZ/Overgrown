@@ -89,10 +89,13 @@ export class NetworkClient {
             clearTimeout(this.reconnectTimer);
         }
 
+        // DEV TEST ONLY
+        // Set server LAN address
+
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${this.reconnectDelay}ms...`);
-            
+            this.url = "ws://192.168.4.33:8080";
             this.reconnectTimer = setTimeout(() => {
                 this.connect();
                 // Exponential backoff with a maximum delay of 10 seconds
