@@ -51,12 +51,12 @@ class Game {
 
         this.network.onPlayerDeath = (data: any) => {
             this.playerManager.handlePlayerDeath(data);
-            if (this.setIsDead && this.playerManager.getLocalPlayer().playerId == data.playerId) this.setIsDead(true); // This will update the UI in UIMain for death screen
+            if (this.setIsDead && this.playerManager.getLocalPlayer().playerId == data.playerId) this.setIsDead(true);
         }
 
         this.network.onRespawnConfirmed = (data: any) => {
             this.playerManager.respawnPlayer(data.playerId);
-            if (this.setIsDead && this.playerManager.getLocalPlayer().playerId == data.playerId) this.setIsDead(false); // Reset death state in UI
+            if (this.setIsDead && this.playerManager.getLocalPlayer().playerId == data.playerId) this.setIsDead(false);
         }
 
         this.network.onSoundFromServer = (data: any) => {

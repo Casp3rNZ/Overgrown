@@ -6,6 +6,8 @@ import { render } from "preact";
 import { HUD } from "./HUD";
 import { DeathScreen } from "./deathScreen";
 import { initAudioEngine } from "../sound/audioEngine";
+import { UserAuthForm } from "./userAuthForm";
+import '../CSS/gameUI.css';
 
 export function UIRoot({ game }) {
     const [chatVisible, setChatVisible] = useState(true);
@@ -20,7 +22,6 @@ export function UIRoot({ game }) {
         chatInputRef.current = document.getElementById("chat-input") as HTMLInputElement;
     }, []);
 
-    // Pointer lock and keyboard/game controls
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return undefined;
@@ -44,32 +45,24 @@ export function UIRoot({ game }) {
         };
         canvas.addEventListener("pointerlockchange", handlePointerLockChange);
 
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
+        // Keyboard/game controls and chat toggle
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (document.activeElement === chatInputRef.current) return;
+            const localPlayer = game.playerManager.getLocalPlayer();
+            if (!localPlayer) return;
+            if (event.key === "Enter" && document.pointerLockElement === canvas) {
+                chatInputRef.current?.focus();
+                document.exitPointerLock();
+            }else if(event.key === "Escape"){
                 if (document.pointerLockElement == chatInputRef.current) {
                     canvas.focus();
                     canvas.requestPointerLock();
                 }else {
                     document.exitPointerLock();
                 }
+            }else {
+                localPlayer.handleKeyboardInput(event, true);
             }
-        };
-        document.addEventListener("keydown", handleEscape);
-
-        // Keyboard/game controls and chat toggle
-        const handleKeyDown = (event: KeyboardEvent) => {
-        if (document.activeElement === chatInputRef.current) return;
-        const localPlayer = game.playerManager.getLocalPlayer();
-        if (!localPlayer) return;
-        if (event.key === "Enter" && document.pointerLockElement === canvas) {
-            // Open chat
-            setTimeout(() => {
-                chatInputRef.current?.focus();
-            }, 0);
-            document.exitPointerLock();
-        }else {
-            localPlayer.handleKeyboardInput(event, true);
-        }
         };
         canvas.addEventListener("keydown", handleKeyDown);
 
@@ -120,12 +113,21 @@ export function UIRoot({ game }) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+    const uiRoot = document.getElementById("ui-root") as HTMLDivElement | null;
+    if (uiRoot) {
+        render(<UserAuthForm />, uiRoot);
+    } else {
+        console.error("Error loading UI");
+    }
+});
+
+function loadGameScene () {
     const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
     const uiRoot = document.getElementById("ui-root") as HTMLDivElement | null;
     if (canvas && uiRoot) {
         const game = new Game(canvas);
         render(<UIRoot game={game} />, uiRoot);
     } else {
-        console.error("Error loading Preact UI");
+        console.error("Error loading UI");
     }
-});
+}
