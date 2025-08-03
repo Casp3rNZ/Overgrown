@@ -1,10 +1,61 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://ggadibwftkzimypfrstb.supabase.co';
 // This key is safe to use in a browser if you have enabled Row Level Security (RLS) for your tables and configured policies.
 const SUPABASE_ANON_KEY = 'sb_publishable_sDxu_1fzPsMtB7I2QFfb6w_7uydIEpb';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+export function UserAuthForm( { loadGameScene } ) {
+    const [menuState, setMenuState] = useState("login");
+    const [authComplete, setAuthComplete] = useState(false);
+
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data, error } = await supabase.auth.getSession();
+                        if (error) {
+                console.error("Error fetching session:", error);
+                return;
+            }
+            if (data?.session) {
+                console.log("Session found:", data.session);
+                setAuthComplete(true);
+            }
+        };
+        checkSession();
+    }, []);
+
+    if (authComplete) {
+        loadGameScene();
+        console.log("Authentication complete, loading game scene...", supabase);
+        return <div>Authentication Complete! Loading Game...</div>;
+    }
+
+    return (
+        <div className="auth-container">
+            {menuState == "login" ? (
+                <LoginForm onSuccess={() => setAuthComplete(true)} />
+            ) : (
+                <RegisterForm onSuccess={() => setMenuState("login")} />
+            )}
+            <button className="switchform-button">
+                {menuState == "login" ? "Need an account?" : "Already have an account?"}
+                <span onClick={() => setMenuState(menuState == "login" ? "register" : "login")}>{menuState == "login" ? "Register" : "Login"}</span>
+            </button>
+            <div className="oath-providers">
+                <button className="oauth-button" onClick={() => supabase.auth.signInWithOAuth({ provider: 'google' })}>
+                    Login with Google
+                </button>
+                <button className="oauth-button" onClick={() => supabase.auth.signInWithOAuth({ provider: 'facebook' })}>
+                    Login with Facebook
+                </button>
+                <button className="oauth-button" onClick={() => supabase.auth.signInWithOAuth({ provider: 'discord' })}>
+                    Login with Discord
+                </button>
+            </div>
+        </div>
+    );
+}
 
 export function LoginForm( { onSuccess } ) {
     const [formData, setFormData] = useState({
@@ -19,13 +70,13 @@ export function LoginForm( { onSuccess } ) {
         setError(null);
 
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email: formData.email,
                 password: formData.password
-            });
-
+            })
             if (error) throw error;
-            onSuccess?.();
+            onSuccess?.(data);
+            console.log("Login successful:", data);
         } catch (error) {
             setError(error.message);
         } finally {
@@ -53,7 +104,7 @@ export function LoginForm( { onSuccess } ) {
     );
 }
 
-export function RegisterForm({ onSuccess }) {
+export function RegisterForm( { onSuccess } ) {
     const [formData, setFormData] = useState({
         email: "",
         username: "",
@@ -107,28 +158,8 @@ export function RegisterForm({ onSuccess }) {
                 //}
             });
             if (error) throw error;
-            let puuid = crypto.randomUUID();
-            // Create a new player profile in the custom players table.
-            // In the future, this will need to be a server side webhook on auth.signup to avoid fuckery, but for now it works.
-            const { data: playerData, error: dbError } = await supabase
-                .from("OvergrownAuth.players")
-                .insert({ 
-                    UUID: puuid,
-                    internalAuthID: data.user.id,
-                    username: formData.username,
-                    email: formData.email,
-                    dob: formData.dob,
-                });
-            if (dbError){
-                console.error("Auth error:", dbError);
-                if (dbError.code === "23505") {
-                    throw new Error("Username or email already exists.");
-                }else{
-                    throw new Error(`Failed to create player profile: ${dbError}`);
-                }
-            }
-            console.log("Player profile created with UUID:", puuid);
             onSuccess?.();
+            console.log("Registration successful:", data);
         } catch (error) {
             setError(error.message);
         } finally {
@@ -146,39 +177,5 @@ export function RegisterForm({ onSuccess }) {
             {error && <div className="error">{error}</div>}
             <button type="submit">Register</button>
         </form>
-    );
-}
-
-export function UserAuthForm() {
-    const [menuState, setMenuState] = useState("login");
-    const [authComplete, setAuthComplete] = useState(false);
-
-    if (authComplete) {
-        return <div>Authentication Complete! Loading Game...</div>;
-    }
-
-    return (
-        <div className="auth-container">
-            {menuState == "login" ? (
-                <LoginForm onSuccess={() => setAuthComplete(true)} />
-            ) : (
-                <RegisterForm onSuccess={() => setAuthComplete(true)} />
-            )}
-            <button className="switchform-button">
-                {menuState == "login" ? "Need an account?" : "Already have an account?"}
-                <span onClick={() => setMenuState(menuState == "login" ? "register" : "login")}>{menuState == "login" ? "Register" : "Login"}</span>
-            </button>
-            <div className="oath-providers">
-                <button className="oauth-button" onClick={() => supabase.auth.signInWithOAuth({ provider: 'google' })}>
-                    Login with Google
-                </button>
-                <button className="oauth-button" onClick={() => supabase.auth.signInWithOAuth({ provider: 'facebook' })}>
-                    Login with Facebook
-                </button>
-                <button className="oauth-button" onClick={() => supabase.auth.signInWithOAuth({ provider: 'discord' })}>
-                    Login with Discord
-                </button>
-            </div>
-        </div>
     );
 }

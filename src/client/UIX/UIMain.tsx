@@ -28,9 +28,10 @@ export function UIRoot({ game }) {
 
         // Pointer lock change
         const handleCanvasClick = () => {
-            if (document.pointerLockElement === canvas) {
+            if (document.pointerLockElement == canvas) {
                 return; // Already locked
             }
+            console.log("Requesting pointer lock...");
             initAudioEngine(game.scene);
             canvas.requestPointerLock();
         };
@@ -45,15 +46,14 @@ export function UIRoot({ game }) {
         };
         canvas.addEventListener("pointerlockchange", handlePointerLockChange);
 
-        // Keyboard/game controls and chat toggle
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (document.activeElement === chatInputRef.current) return;
+            if (document.activeElement == chatInputRef.current) return;
             const localPlayer = game.playerManager.getLocalPlayer();
             if (!localPlayer) return;
-            if (event.key === "Enter" && document.pointerLockElement === canvas) {
+            if (event.key == "Enter" && document.pointerLockElement == canvas) {
                 chatInputRef.current?.focus();
                 document.exitPointerLock();
-            }else if(event.key === "Escape"){
+            }else if(event.key == "Escape"){
                 if (document.pointerLockElement == chatInputRef.current) {
                     canvas.focus();
                     canvas.requestPointerLock();
@@ -66,7 +66,6 @@ export function UIRoot({ game }) {
         };
         canvas.addEventListener("keydown", handleKeyDown);
 
-        // Handle key up for game controls
         const handleKeyUp = (event: KeyboardEvent) => {
             const localPlayer = game.playerManager.getLocalPlayer();
             if (!localPlayer) return;
@@ -111,19 +110,18 @@ export function UIRoot({ game }) {
     </div>
     );
 }
+const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
+const uiRoot = document.getElementById("ui-root") as HTMLDivElement | null;
 
 window.addEventListener("DOMContentLoaded", () => {
-    const uiRoot = document.getElementById("ui-root") as HTMLDivElement | null;
     if (uiRoot) {
-        render(<UserAuthForm />, uiRoot);
+        render(<UserAuthForm loadGameScene={loadGameScene} />, uiRoot);
     } else {
         console.error("Error loading UI");
     }
 });
 
 function loadGameScene () {
-    const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
-    const uiRoot = document.getElementById("ui-root") as HTMLDivElement | null;
     if (canvas && uiRoot) {
         const game = new Game(canvas);
         render(<UIRoot game={game} />, uiRoot);

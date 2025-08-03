@@ -1,9 +1,11 @@
+// Class for client-server websocket communication.
+// Handles player state, input, and game events.
 export class NetworkClient {
     public socket: WebSocket | null = null;
     private url: string;
     private reconnectAttempts: number = 0;
-    private maxReconnectAttempts: number = 5;
-    private reconnectDelay: number = 1000; // Start with 1 second delay
+    private maxReconnectAttempts: number = 900;
+    private reconnectDelay: number = 3000;
     private reconnectTimer: NodeJS.Timeout | null = null;
     public playerId: string | null = null;
     public onState: (players: any) => void = () => {};
@@ -27,9 +29,8 @@ export class NetworkClient {
             this.socket.onopen = () => {
                 console.log("Connected to server.");
                 this.reconnectAttempts = 0;
-                this.reconnectDelay = 1000; // Reset delay on successful connection
+                this.reconnectDelay = 1000;
             };
-
             this.socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 if (data.type != 'state') {
@@ -66,12 +67,10 @@ export class NetworkClient {
                         break;
                 }
             };
-
             this.socket.onclose = () => {
                 console.log("Disconnected from server.");
                 this.handleDisconnect();
             };
-
             this.socket.onerror = (err) => {
                 console.error("WebSocket error:", err);
                 this.handleDisconnect();
@@ -84,14 +83,11 @@ export class NetworkClient {
 
     private handleDisconnect() {
         this.onDisconnect();
-        
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
         }
-
         // DEV TEST ONLY
         // Set server LAN address
-
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${this.reconnectDelay}ms...`);
