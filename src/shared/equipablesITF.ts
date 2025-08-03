@@ -15,6 +15,9 @@ interface Equipable {
         offset_x: number;
         offset_y: number;
         offset_z: number;
+        offset_rotation_x: number;
+        offset_rotation_y: number;
+        offset_rotation_z: number;
         bob_cycle: number;
         bob_amt_lat: number;
         bob_amt_vert: number;

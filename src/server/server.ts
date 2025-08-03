@@ -27,7 +27,7 @@ function generateId() {
 (wss as WebSocketServer).on("connection", (ws: PlayerWebSocket) => {
     console.log("New player connected");
     const id = generateId();
-    ws.playerId = id; // Attach playerId to the ws object
+    ws.playerId = id;
     // broadcast to all clients that a new player has joined
     wss.clients.forEach(client => {
         if (client.readyState == 1) {
@@ -126,20 +126,6 @@ function generateId() {
     // Send the player's ID
     ws.send(JSON.stringify({ type: "init", id }));
 });
-
-function broadcastSoundAtPositionFromPlayer(soundType: string, position: Vector3, playerId: string) {
-    // to test and implement in all other player actioned broadcasts.
-    wss.clients.forEach(client => {
-        const c = client as PlayerWebSocket;
-        if (c.readyState === 1 && c.playerId !== playerId) {
-            c.send(JSON.stringify({
-                type: "sound",
-                soundType: soundType,
-                position: position,
-            }));
-        }
-    });
-}
 
 // Game loop
 function startTPSLoop(TPS: number) {
