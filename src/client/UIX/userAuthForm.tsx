@@ -8,26 +8,26 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export function UserAuthForm( { loadGameScene } ) {
     const [menuState, setMenuState] = useState("login");
-    const [authComplete, setAuthComplete] = useState(false);
+    const [authComplete, setAuthComplete] = useState(null);
 
     useEffect(() => {
         const checkSession = async () => {
             const { data, error } = await supabase.auth.getSession();
-                        if (error) {
+            if (error) {
                 console.error("Error fetching session:", error);
-                return;
+                return false;
             }
             if (data?.session) {
                 console.log("Session found:", data.session);
-                setAuthComplete(true);
+                setAuthComplete(data.session);
             }
+            return true;
         };
         checkSession();
     }, []);
 
-    if (authComplete) {
-        loadGameScene();
-        console.log("Authentication complete, loading game scene...", supabase);
+    if (authComplete != null) {
+        loadGameScene(authComplete);
         return <div>Authentication Complete! Loading Game...</div>;
     }
 

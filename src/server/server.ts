@@ -1,8 +1,9 @@
 import { WebSocketServer, WebSocket } from "ws";
-import { simulatePlayerMovement, PlayerState, PlayerInput } from "../shared/movement.js";
+import { simulatePlayerMovement, PlayerState } from "../shared/movement.js";
 import { handleCollisions } from "../shared/collision.js";
 import { Vector3, Ray } from "@babylonjs/core";
 import { EQUIPPABLES } from "../shared/EQUIPPABLES_DEFINITION.js";
+import { createClient } from '@supabase/supabase-js';
 console.log("Overgrown - WSS listening on ws://localhost:8080");
 
 // Currently all connected players state is stored in memory, and updated every call from the client.
@@ -11,65 +12,79 @@ console.log("Overgrown - WSS listening on ws://localhost:8080");
 // The movement system has a custom physics simulation that aims to replicate Quake / CS:GO style movement.
 // All other props will be handled with Cannon.js or a similar physics engine (to be implemented).
 // Colyseus or similar will be used for authoritative server state and player management (to be implemented).
+const SUPABASE_URL = 'https://ggadibwftkzimypfrstb.supabase.co';
+// This key is safe to use in a browser if you have enabled Row Level Security (RLS) for your tables and configured policies.
+const SUPABASE_ANON_KEY = 'sb_publishable_sDxu_1fzPsMtB7I2QFfb6w_7uydIEpb';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const wss = new WebSocketServer({ 
     port: 8080 
 });
 interface PlayerWebSocket extends WebSocket {
-    playerId?: string;
+    playerId: string;
+    playerName: string;
 }
 var players: Record<string, PlayerState> = {};
 
-function generateId() {
-    return Math.random().toString(36).substr(2, 9);
-}
-
 (wss as WebSocketServer).on("connection", (ws: PlayerWebSocket) => {
     console.log("New player connected");
-    const id = generateId();
-    ws.playerId = id;
-    // broadcast to all clients that a new player has joined
-    wss.clients.forEach(client => {
-        if (client.readyState == 1) {
-                client.send(JSON.stringify({ 
-                type: "chat", 
-                playerId: "SERVER",
-                message: `${id} has joined the game.`
-            }));
-        }
-    });
-
-    // Initialize player state
-    players[id] = {
-        position: { x: 0, y: 1.8, z: 0 },
-        velocity: { x: 0, y: 0, z: 0 },
-        moveDirection: { x: 0, y: 0, z: 0 },
-        wishDirection: { x: 0, y: 0, z: 0 },
-        isGrounded: false,
-        lastJumpTime: 0,
-        jumpQueued: false,
-        friction: 0,
-        strafeAngle: 0,
-        consecutiveJumps: 0,
-        input: {
-            forward: false,
-            backward: false,
-            left: false,
-            right: false,
-            jump: false,
-            rotationY: 0,
-            equippedItemID: 0
-        },
-        health: 100,
-        dead: false
-    };
 
     ws.on("message", (msg) => {
         try {
             let data = JSON.parse(msg.toString());
             switch (data.type) {
+                case "auth":
+                    if (!data.token.user || !data.token.user.user_metadata) {
+                        console.error("Invalid auth data:", data);
+                        return;
+                    }
+                    // TODO: setup auth token validation and error return to client.
+                    ws.playerId = data.token.user.id;
+                    ws.playerName = data.token.user.user_metadata.username;
+                    // Initialize player state
+                    players[ws.playerId] = {
+                        position: { x: 0, y: 1.8, z: 0 },
+                        velocity: { x: 0, y: 0, z: 0 },
+                        moveDirection: { x: 0, y: 0, z: 0 },
+                        wishDirection: { x: 0, y: 0, z: 0 },
+                        isGrounded: false,
+                        lastJumpTime: 0,
+                        jumpQueued: false,
+                        friction: 0,
+                        strafeAngle: 0,
+                        consecutiveJumps: 0,
+                        input: {
+                            forward: false,
+                            backward: false,
+                            left: false,
+                            right: false,
+                            jump: false,
+                            rotationY: 0,
+                            equippedItemID: 0
+                        },
+                        health: 100,
+                        dead: false
+                    };
+                    // Send the player's ID
+                    ws.send(JSON.stringify({ 
+                        type: "init", 
+                        playerId: ws.playerId,
+                        username: ws.playerName
+                    }));
+                    // Broadcast new player
+                    wss.clients.forEach(client => {
+                        if (client.readyState == 1) {
+                            client.send(JSON.stringify({ 
+                            type: "chat", 
+                            playerId: "SERVER",
+                            message: `${ws.playerName} has joined the game.`
+                            }));
+                        }
+                    });
+                    console.log(`Player ${ws.playerName} ${ws.playerId} connected`);
+                    break;
                 case "input":
-                    players[id].input = data.input;
+                    players[ws.playerId].input = data.input;
                     break;
                 case "chat":
                     // Broadcast chat message to all clients
@@ -84,10 +99,10 @@ function generateId() {
                     });
                     break;
                 case "shoot":
-                    handlePlayerHitDetection(id, data);
+                    handlePlayerHitDetection(ws.playerId, data);
                     // broadcast sound to all clients
                     (wss as WebSocketServer).clients.forEach((client: PlayerWebSocket) => {
-                        if (client.readyState == 1 && client.playerId !== id) {
+                        if (client.readyState == 1 && client.playerId !== ws.playerId) {
                             client.send(JSON.stringify({
                                 type: "soundFromServer",
                                 equipID: data.equipID,
@@ -98,8 +113,8 @@ function generateId() {
                     });
                     break;
                 case "respawnRequest":
-                    if (players[id].dead) {
-                        handlePlayerRespawn(id);
+                    if (players[ws.playerId].dead) {
+                        handlePlayerRespawn(ws.playerId);
                     }
                     break;
             }
@@ -109,22 +124,19 @@ function generateId() {
     });
 
     ws.on("close", () => {
-        delete players[id];
-        console.log(`Player ${id} disconnected`);
+        delete players[ws.playerId];
+        console.log(`Player ${ws.playerName} disconnected`);
         // Broadcast to all clients that a player has left
         wss.clients.forEach(client => {
             if (client.readyState == 1) {
                 client.send(JSON.stringify({ 
                     type: "chat", 
                     playerId: "SERVER",
-                    message: `${id} has left the game.`
+                    message: `${ws.playerName} has left the game.`
                 }));
             }
         });
     });
-
-    // Send the player's ID
-    ws.send(JSON.stringify({ type: "init", id }));
 });
 
 // Game loop
@@ -136,6 +148,11 @@ function startTPSLoop(TPS: number) {
         const now = Date.now();
         const dt = (now - lastTick) / 1000; // seconds since last tick
         lastTick = now;
+
+        if (Object.keys(players).length == 0) {
+            setTimeout(tick, tickDelay);
+            return; // No players to simulate
+        }
 
         // Simulate all players
         for (const id in players) {

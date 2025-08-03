@@ -15,18 +15,23 @@ class Game {
     private readonly TICK_INTERVAL = 1000 / 20;
     public setIsDead: (dead: boolean) => void = () => {};
 
-    constructor(private canvas: HTMLCanvasElement) {
-        this.engine = new Engine(this.canvas, true);
-        this.scene = new Scene(this.engine);
-        this.network = new NetworkClient("ws://localhost:8080");
-        this.playerManager = new PlayerManager(this.scene, this.network);
-        this.init();
+    constructor(private canvas: HTMLCanvasElement, private _authToken: string) {
+        if (!canvas || !_authToken) {
+            throw new Error("Canvas element and valid auth token is required to initialize the game.");
+        }else {
+            this.engine = new Engine(this.canvas, true);
+            this.scene = new Scene(this.engine);
+            this.network = new NetworkClient("ws://localhost:8080", _authToken);
+            this.playerManager = new PlayerManager(this.scene, this.network);
+            this.init();
+        }
     }
 
     private async init(): Promise<void> {
         createGameScene(this.scene);
 
         this.network.onReady = (playerId: string) => {
+            console.log("Network client ready with player ID:", playerId);
             const localPlayer = this.playerManager.createLocalPlayer(playerId);
             // Babylon automatically uses activeCamera as the audio listener
             this.scene.activeCamera = localPlayer.camera;
