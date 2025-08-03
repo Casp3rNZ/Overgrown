@@ -121,9 +121,9 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-function loadGameScene () {
-    if (canvas && uiRoot) {
-        const game = new Game(canvas);
+function loadGameScene ( authToken: any ) {
+    if (canvas && uiRoot && authToken) {
+        const game = new Game(canvas, authToken);
         render(<UIRoot game={game} />, uiRoot);
     } else {
         console.error("Error loading UI");

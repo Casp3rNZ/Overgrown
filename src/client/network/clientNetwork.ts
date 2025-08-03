@@ -17,19 +17,29 @@ export class NetworkClient {
     public onRespawnConfirmed: (data: any) => void = () => {};
     public onSoundFromServer: (data: any) => void = () => {};
     private lastInput: any = null;
+    private authToken: string;
+    private username: string | null = null;
 
-    constructor(url: string) {
+    constructor(url: string, private _authToken: string) {
         this.url = url;
+        this.authToken = _authToken;
         this.connect();
     }
 
     private connect() {
         try {
+            console.log("Connecting to server at", this.url);
             this.socket = new WebSocket(this.url);
             this.socket.onopen = () => {
                 console.log("Connected to server.");
                 this.reconnectAttempts = 0;
                 this.reconnectDelay = 1000;
+                if (this.authToken) {
+                    this.socket.send(JSON.stringify({
+                        type: "auth",
+                        token: this.authToken
+                    }));
+                }
             };
             this.socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
@@ -38,9 +48,10 @@ export class NetworkClient {
                 }
                 switch (data.type) {
                     case "init":
-                        if (data.id) {
-                            this.playerId = data.id;
-                            this.onReady(data.id);
+                        if (data.playerId) {
+                            this.playerId = data.playerId;
+                            this.username = data.username;
+                            this.onReady(data.playerId);
                         }
                         break;
                     case "state":
