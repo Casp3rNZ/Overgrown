@@ -4,7 +4,6 @@ import { createGameScene } from "./scenes/testGameScene";
 import { NetworkClient } from "./network/clientNetwork";
 import { PlayerManager } from "./entities/playerManager";
 import "./UIX/UIMain"; 
-import { playSpacialSound } from "./sound/audioEngine";
 
 class Game {
     // Handles all client side game loops
@@ -29,8 +28,7 @@ class Game {
     }
 
     private async init(): Promise<void> {
-        createGameScene(this.scene);
-
+        const { ground, box } = createGameScene(this.scene);
         this.network.onReady = (playerId: string) => {
             console.log("Network client ready with player ID:", playerId);
             const localPlayer = this.playerManager.createLocalPlayer(playerId);

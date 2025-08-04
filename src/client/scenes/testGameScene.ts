@@ -1,4 +1,4 @@
-import {Scene, MeshBuilder, StandardMaterial, Color3, Vector3, DirectionalLight, Color4 } from "@babylonjs/core";
+import {Scene, HemisphericLight, ShadowGenerator, MeshBuilder, StandardMaterial, Color3, Vector3, DirectionalLight, Color4 } from "@babylonjs/core";
 
 export function createGameScene(scene: Scene) {
 
@@ -15,9 +15,13 @@ export function createGameScene(scene: Scene) {
 
     // Create a directional light
     const light = new DirectionalLight("dirLight", new Vector3(-1, -2, -1), scene);
+    light.position = new Vector3(20, 40, 20);
     light.intensity = 0.7;
     // Create a material for the ground
     const groundMaterial = new StandardMaterial("groundMaterial", scene);
+    // Add a hemispheric light for ambient lighting
+    const hemiLight = new HemisphericLight("hemiLight", new Vector3(0, 1, 0), scene);
+    hemiLight.intensity = 0.1;
     //light blue color
     groundMaterial.diffuseColor = new Color3(0.5, 0.7, 1);
     groundMaterial.specularColor = new Color3(0.1, 0.1, 0.1);
@@ -32,6 +36,11 @@ export function createGameScene(scene: Scene) {
     box.position = new Vector3(5, 1, -5);
     box.checkCollisions = true;
 
-    return { ground, box}
+    // Enable Shadows
+    const shadowGenerator = new ShadowGenerator(1024, light);
+    shadowGenerator.addShadowCaster(box);
+    ground.receiveShadows = true;
+    (scene as any).shadowGenerator = shadowGenerator;
+    return { ground, box }
 
 }

@@ -1,5 +1,5 @@
 import "@babylonjs/loaders/glTF";
-import { TransformNode, Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools, AnimationGroup, ImportMeshAsync, AbstractMesh, Color3, StandardMaterial, PointLight } from "@babylonjs/core";
+import { TransformNode, ShadowGenerator, Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools, AnimationGroup, ImportMeshAsync, AbstractMesh, Color3, StandardMaterial, PointLight } from "@babylonjs/core";
 import { PlayerInput } from "../../shared/movement";
 import { NetworkClient } from "../network/clientNetwork";
 import { StateInterpolator } from "./stateInterpolator";
@@ -34,11 +34,13 @@ export class Player {
     private lastInput: PlayerInput | null = null;
     public gunMesh: AbstractMesh | null = null;
     public muzzleEnd: TransformNode | null = null;
+    private shadowGenerator?: ShadowGenerator;
 
-    constructor(scene: Scene, network: NetworkClient, playerId: string, isRemote: boolean = false) {
+    constructor(scene: Scene, network: NetworkClient, playerId: string, isRemote: boolean = false, shadowGenerator?: ShadowGenerator) {
         this.playerId = playerId;
         this.network = network;
         this.isRemote = isRemote;
+        this.shadowGenerator = shadowGenerator;
         this.stateInterpolator = new StateInterpolator();
         this.createPlayerCollisionMesh(scene);
         if (!isRemote) {
@@ -65,6 +67,10 @@ export class Player {
         this.playerModel = result.meshes[0];
         this.playerModel.parent = this.collisionMesh;
         this.playerModel.position = new Vector3(0, -1, 0);
+        this.playerModel.receiveShadows = true;
+        if (this.shadowGenerator) {
+        this.shadowGenerator.addShadowCaster(this.playerModel);
+        }
 
         // Set up animations
         result.animationGroups.forEach((animGroup) => {

@@ -38,9 +38,9 @@ export const EQUIPPABLES: Record<number, EquipableItem> = {
         name: "AK-47",
         description: "Cheeki Breeki",
         viewmodel: {
-            offset_x: 0.2,
-            offset_y: -0.12,
-            offset_z: 0.2,
+            offset_x: 0.10, // + Right - Left
+            offset_y: -0.08, // - Up + Down
+            offset_z: 0.08, // + Forward - Backward
             offset_rotation_x: 0,
             offset_rotation_y: Math.PI / -2,
             offset_rotation_z: 0,

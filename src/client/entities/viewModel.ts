@@ -54,7 +54,8 @@ export class ViewModel {
 
             // load mount points for IK
             this.muzzleEnd = this.gunMesh.getChildTransformNodes().find(node => node.name == "Muzzle_Origin");
-            console.log(`Loaded gun model: ${equppedItem.name} with ID: ${id}`);
+            this.muzzleEnd.scaling = new Vector3(0.01, 0.01, 0.01);
+            //console.log(`Loaded gun model: ${equppedItem.name} with ID: ${id}`);
         } catch (error) {
             console.error("Error loading gun model:", error);
         }
@@ -161,14 +162,17 @@ export class ViewModel {
         // math.random min max = math.ran
 
         // Create a small plane for the flash
-        const flashMesh = MeshBuilder.CreatePlane("muzzleFlash", { size: Math.random() * (0.5 - 0.8) + 0.5}, scene);
+        // there is currently a bug where the mesh is somehow bigger when equipping different guns.
+        const minSize = 0.2;
+        const maxSize = 0.4;
+        const flashSize = Math.random() * (maxSize - minSize) + minSize;
+        const flashMesh = MeshBuilder.CreatePlane("muzzleFlash", { size: flashSize }, scene);
         flashMesh.parent = muzzleEnd;
         flashMesh.rotation = new Vector3(
             Math.random() * Math.PI,
             Math.random() * Math.PI,
             Math.random() * Math.PI
         );
-
         // Playing with emissive matt planes
         const flashMat = new StandardMaterial("muzzleFlashMat", scene);
         flashMat.emissiveColor = new Color3(1, 0.9 + Math.random() * 0.1, 0.6 + Math.random() * 0.2);

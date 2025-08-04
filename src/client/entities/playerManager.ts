@@ -26,7 +26,8 @@ export class PlayerManager {
     }
 
     public createRemotePlayer(playerId: string): Player {
-        const player = new Player(this.scene, this.network, playerId, true);
+        const shadowGenerator = (this.scene as any).shadowGenerator;
+        const player = new Player(this.scene, this.network, playerId, true, shadowGenerator);
         this.players.set(playerId, player);
         console.log("Created remote player:", playerId);
         return player;
