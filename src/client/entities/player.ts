@@ -252,7 +252,7 @@ export class Player {
 
             if (this.isRemote) {                
                 // Update equipped item
-                console.log(`input: ${this.input.equippedItemID}, me: ${me.input.equippedItemID}`);
+                //console.log(`input: ${this.input.equippedItemID}, me: ${me.input.equippedItemID}`);
                 if (this.input.equippedItemID != me.input.equippedItemID) {
                     this.input.equippedItemID = me.input.equippedItemID;
                     this.loadRemotePlayerGunModel(this.input.equippedItemID);
@@ -400,6 +400,8 @@ export class Player {
             case "gunshot":
                 if (this.gunMesh) {
                     playSpacialSound(EQUIPPABLES[this.input.equippedItemID].fireSound, this.gunMesh, volume);
+                    // Trigger matching VFX
+                    this.remotePlayerMuzzleFlash(this.scene);
                 } else {
                     console.warn(`Gun mesh not found for player ${this.playerId}.`);
                 }
@@ -410,8 +412,8 @@ export class Player {
             case "reload":
                 // Handle reload sound
                 break;
-            case "hit":
-                // Handle hit sound
+            case "remotePlayerHit":
+                playSpacialSound(soundType, this.collisionMesh, volume);
                 break;
             default:
                 console.warn(`Unknown sound type: ${soundType}`);

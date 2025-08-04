@@ -37,8 +37,6 @@ export class ViewModel {
             if (this.gunMesh) {
                 this.recoilVelocity = 0;
                 this.recoilOffset = 0;
-                this.smoothedWeaponPosition = new Vector3(0, 0, 0);
-                this.smoothedWeaponRotation = new Vector3(0, Math.PI / -2, 0);
                 this.gunMesh.dispose();
             }
             this.equippedGunID = id;
@@ -56,6 +54,7 @@ export class ViewModel {
 
             // load mount points for IK
             this.muzzleEnd = this.gunMesh.getChildTransformNodes().find(node => node.name == "Muzzle_Origin");
+            console.log(`Loaded gun model: ${equppedItem.name} with ID: ${id}`);
         } catch (error) {
             console.error("Error loading gun model:", error);
         }
@@ -121,7 +120,7 @@ export class ViewModel {
         //this.smoothedWeaponRotation.y = this.lerp(this.smoothedWeaponRotation.y, newWeaponRotation.y, lerpSmooth);
         this.smoothedWeaponRotation.z = this.lerp(this.smoothedWeaponRotation.z, newWeaponRotation.z, lerpSmooth);
         
-        //#endregion
+        //#endregion 
         this.gunMesh.position = this.smoothedWeaponPosition;
         this.gunMesh.rotation = this.smoothedWeaponRotation;
     }
@@ -147,9 +146,9 @@ export class ViewModel {
     }
 
     public isReadyToShoot(): boolean {
-        if (!this.gunMesh || !this.muzzleEnd || this.equippedGunID) 
+        if (!this.gunMesh || !this.muzzleEnd) 
         {
-            console.warn("No gun mesh loaded to check readiness.");
+            console.warn(`No gun mesh loaded to check readiness. mesh: ${this.gunMesh}, muzzleEnd: ${this.muzzleEnd}, equippedGunID: ${this.equippedGunID}`);
             return false;
         } else {
             return true;

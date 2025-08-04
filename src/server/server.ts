@@ -304,6 +304,7 @@ function handlePlayerHitDetection(
             client.send(JSON.stringify({
                 type: "hit",
                 playerId: closestHit,
+                attacker: playerId,
                 damage: hitDamage
             }));
         });

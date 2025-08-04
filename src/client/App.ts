@@ -4,6 +4,7 @@ import { createGameScene } from "./scenes/testGameScene";
 import { NetworkClient } from "./network/clientNetwork";
 import { PlayerManager } from "./entities/playerManager";
 import "./UIX/UIMain"; 
+import { playSpacialSound } from "./sound/audioEngine";
 
 class Game {
     // Handles all client side game loops
@@ -52,11 +53,16 @@ class Game {
 
         this.network.onPlayerHit = (playerId: string, damage: number) => {
             this.playerManager.damagePlayer(playerId, damage);
+            if (playerId !== this.network.playerId) {
+                const hitsound = "remotePlayerHit";
+                this.playerManager.playSoundOnPlayer(playerId, hitsound, 0.5);
+            }
         }
 
         this.network.onPlayerDeath = (data: any) => {
             this.playerManager.handlePlayerDeath(data);
             if (this.setIsDead && this.playerManager.getLocalPlayer().playerId == data.playerId) this.setIsDead(true);
+            // pass event to killfeed component
         }
 
         this.network.onRespawnConfirmed = (data: any) => {

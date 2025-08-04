@@ -114,7 +114,6 @@
     cursor: pointer;
     transition: all 0.3s ease;
     text-transform: uppercase;
-    font-family: 'Orbitron', sans-serif;
     text-shadow: 0 0 10px rgba(0, 200, 255, 0.7);
     box-shadow: 
         0 0 15px rgba(0, 180, 255, 0.3),

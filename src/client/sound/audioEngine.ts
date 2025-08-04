@@ -11,9 +11,14 @@ export async function initAudioEngine(scene: Scene) {
     await audioEngine.unlockAsync();
 
     // preload all sounds for now
-    const baseSounds = ["coltShot", "emptyMag"]
-    for (const sound of baseSounds) {
-        const soundfile = `${SOUND_DIR}guns/${sound}.mp3`;
+    const baseSounds = {
+        remotePlayerHit: "VFX/remotePlayerHit",
+        coltShot: "guns/coltShot",
+        emptyMag: "guns/emptyMag",
+        AKShot: "guns/AKShot",
+    }
+    for (const [sound, path] of Object.entries(baseSounds)) {
+        const soundfile = `${SOUND_DIR}${path}.mp3`;
         soundBuffers[sound] = await CreateSoundBufferAsync(soundfile);
         console.log(`Preloaded sound: ${sound}`);
     }
@@ -24,7 +29,7 @@ export async function initAudioEngine(scene: Scene) {
 }
 
 export async function playSpacialSound(type: string, mesh: Mesh | AbstractMesh, volume: number = 1) {
-    // Spacial sound is currently kind of fucked.
+    // plays sound that follows a meshes position
     if (!audioEngine) return;
     const buffer = soundBuffers[type];
     if (!buffer) {
@@ -39,12 +44,13 @@ export async function playSpacialSound(type: string, mesh: Mesh | AbstractMesh, 
         spatialDistanceModel: "linear",
         spatialRolloffFactor: 1,
     }, audioEngine);
+    //console.log(`Playing spatial sound: ${type} on mesh: ${mesh.name}`);
     sound.spatial.attach(mesh, false, SpatialAudioAttachmentType.Position);
     sound.play();
 }
 
 export async function playSound(type: string, volume: number = 1) {
-    // This function plays a non-spatial sound - working!
+    /// Plays a non-spatial sound
     if (!audioEngine) return;
     const buffer = soundBuffers[type];
     if (!buffer) {

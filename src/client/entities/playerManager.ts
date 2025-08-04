@@ -32,7 +32,7 @@ export class PlayerManager {
         return player;
     }
 
-    public getLocalPlayer(): Player | null {
+    public getLocalPlayer(): any {
         return this.localPlayerId ? this.players.get(this.localPlayerId) || null : null;
     }
 
@@ -149,9 +149,6 @@ export class PlayerManager {
         if (player.isRemote) {
             // sound
             player.playSoundOnPlayer(soundType, volume);
-
-            // matching VFX
-            player.remotePlayerMuzzleFlash(this.scene);
         }
     }
 } 
