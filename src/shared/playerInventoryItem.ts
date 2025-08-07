@@ -22,7 +22,7 @@ export class PlayerInventoryItem {
     }
 
     public initGun(): void {
-        console.log(`PII:InitGun - Initializing gun with ID ${this.equipableId}`);
+        //console.log(`PII:InitGun - Initializing gun with ID ${this.equipableId}`);
         const equipable = EQUIPPABLES[this.equipableId];
         if (equipable) {
             this.ammo = equipable.gunStats.magazineSize || null;

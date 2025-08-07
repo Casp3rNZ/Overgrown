@@ -205,7 +205,6 @@ export class Player {
 
     public equipItem(slot: InventorySlot): void {
         const item = this.inventory.getItemInSlot(slot);
-        console.log(`Equipping item from slot ${slot}:`, item);
         if (item) {
             this.input.equippedItemID = item.equipableId;
             this.viewModel.loadModel(item);

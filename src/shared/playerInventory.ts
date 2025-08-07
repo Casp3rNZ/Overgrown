@@ -15,7 +15,6 @@ export class PlayerInventory {
     
     public addItem(slot: InventorySlot, item: PlayerInventoryItem): void {
         this.slots[slot] = item;
-        console.log(`Added item to ${slot} slot:`, item);
     }
 
     public removeItem(slot: InventorySlot): void {

@@ -154,7 +154,6 @@ export class PlayerManager {
     public updateLocalPlayerInventory(inventory: any): void {
         const localPlayer = this.getLocalPlayer();
         if (localPlayer) {
-            console.log("Updating local player inventory PM:", inventory);
             localPlayer.updateInventory(inventory);
         }
     }
