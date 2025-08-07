@@ -41,9 +41,13 @@ export function HUD ({ playerManager }: HUDProps) {
     });
 
     return (
-        <div class="HUD">
-            <div class="Ammo"> {ammo}/{magSize} </div>
-            <div class="HP"> {health}</div>
+        <div class="hud">
+            {equippedItem && 
+                <div class="ammo">
+                    {ammo}/{magSize}
+                </div>
+            }
+            <div class="hp"> {health}</div>
         </div>
     )
 

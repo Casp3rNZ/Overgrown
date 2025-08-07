@@ -7,7 +7,6 @@ import { ViewModel } from "./viewModel";
 import { playSpacialSound, playSound } from "../sound/audioEngine";
 import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION";
 import { PlayerInventory, InventorySlot } from "../../shared/playerInventory";
-import { PlayerInventoryItem } from "../../shared/playerInventoryItem";
 
 export class Player {
     public playerModel: AbstractMesh;

@@ -1,7 +1,6 @@
 import { Scene } from "@babylonjs/core";
 import { NetworkClient } from "../network/clientNetwork";
 import { Player } from "./player";
-import { PlayerInventory } from "../../shared/playerInventory";
 
 export class PlayerManager {
     private players: Map<string, Player>;
