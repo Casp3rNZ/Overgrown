@@ -16,6 +16,7 @@ export class NetworkClient {
     public onPlayerHit: (playerId: string, damage: number) => void = () => {};
     public onRespawnConfirmed: (data: any) => void = () => {};
     public onSoundFromServer: (data: any) => void = () => {};
+    public onUpdateInventory: (inventory: any) => void = () => {};
     private lastInput: any = null;
     private authToken: string;
     private username: string | null = null;
@@ -52,6 +53,8 @@ export class NetworkClient {
                             this.playerId = data.playerId;
                             this.username = data.username;
                             this.onReady(data.playerId);
+                            this.onUpdateInventory(data.inventory);
+                            // need to handle data.inventory here
                         }
                         break;
                     case "state":

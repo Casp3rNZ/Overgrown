@@ -7,8 +7,8 @@ export class StateInterpolator {
         correction?: { position: { x: number; y: number; z: number } };
     }> = [];
 
-    private readonly maxStates = 10; 
-    // Keep last 10 states for interpolation
+    private readonly maxStates = 20; 
+    // (20 states at 20 TPS = 1 second)
     // anything more seems a little off for 20tps
 
     public addState(state: { 
@@ -24,21 +24,15 @@ export class StateInterpolator {
             correction: state.correction ? { position: { ...state.correction.position } } : undefined,
             timestamp: performance.now()
         });
-
-        // Remove old states
         if (this.states.length > this.maxStates) {
             this.states.shift();
         }
-
-        // If we received a correction, adjust all future states
         if (state.correction) {
             const correctionDelta = {
                 x: state.correction.position.x - state.position.x,
                 y: state.correction.position.y - state.position.y,
                 z: state.correction.position.z - state.position.z
             };
-
-            // Apply correction to all future states
             for (let i = this.states.length - 1; i >= 0; i--) {
                 if (this.states[i].timestamp >= this.states[this.states.length - 1].timestamp) {
                     this.states[i].position.x += correctionDelta.x;
@@ -56,11 +50,8 @@ export class StateInterpolator {
     } | null {
         const now = performance.now();
         const targetTime = now - interpolationDelay;
-
-        // Find the two states to interpolate between
         let olderState = null;
         let newerState = null;
-
         for (let i = this.states.length - 1; i >= 0; i--) {
             if (this.states[i].timestamp <= targetTime) {
                 olderState = this.states[i];
@@ -74,29 +65,19 @@ export class StateInterpolator {
         if (!olderState || !newerState) {
             return null;
         }
-
-        // Calculate interpolation factor
-        const factor = (targetTime - olderState.timestamp) / 
-                      (newerState.timestamp - olderState.timestamp);
-
-        // Calculate the time delta between states
-        const dt = (newerState.timestamp - olderState.timestamp) / 1000; // Convert to seconds
-
-        // Calculate the expected position based on velocity and friction
+        const factor = (targetTime - olderState.timestamp) / (newerState.timestamp - olderState.timestamp);
+        const dt = (newerState.timestamp - olderState.timestamp) / 1000;
         const expectedPosition = {
             x: olderState.position.x + olderState.velocity.x * dt * factor,
             y: olderState.position.y + olderState.velocity.y * dt * factor,
             z: olderState.position.z + olderState.velocity.z * dt * factor
         };
 
-        // Calculate the actual interpolated position
         const interpolatedPosition = {
             x: olderState.position.x + (newerState.position.x - olderState.position.x) * factor,
             y: olderState.position.y + (newerState.position.y - olderState.position.y) * factor,
             z: olderState.position.z + (newerState.position.z - olderState.position.z) * factor
         };
-
-        // Calculate the effective velocity that would result in the interpolated position
         const effectiveVelocity = {
             x: (interpolatedPosition.x - olderState.position.x) / (dt * factor),
             y: (interpolatedPosition.y - olderState.position.y) / (dt * factor),

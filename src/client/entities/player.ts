@@ -6,6 +6,8 @@ import { StateInterpolator } from "./stateInterpolator";
 import { ViewModel } from "./viewModel";
 import { playSpacialSound, playSound } from "../sound/audioEngine";
 import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION";
+import { PlayerInventory, InventorySlot } from "../../shared/playerInventory";
+import { PlayerInventoryItem } from "../../shared/playerInventoryItem";
 
 export class Player {
     public playerModel: AbstractMesh;
@@ -16,6 +18,7 @@ export class Player {
     private scene: Scene;
     private stateInterpolator: StateInterpolator;
     private viewModel: ViewModel | null = null;
+    private inventory: PlayerInventory;
     private input: PlayerInput = {
         forward: false,
         backward: false,
@@ -23,7 +26,7 @@ export class Player {
         right: false,
         jump: false,
         rotationY: 0,
-        equippedItemID: 0
+        equippedItemID: -1
     };
     public dead: boolean = false;
     public isGrounded: boolean = true;
@@ -47,8 +50,8 @@ export class Player {
             this.scene = scene;
             this.createCamera(scene);
             this.setupMouseInput(scene);
+            this.inventory = new PlayerInventory();
             this.viewModel = new ViewModel(scene, this.camera);
-            this.viewModel.loadGunModel(0)
         } else {
             this.createplayerModel(scene)
         }
@@ -153,16 +156,18 @@ export class Player {
             return; // Not a key event we handle
         }
 
+        const key = event.key.toLowerCase();
+
         // Handle death state
         if (this.dead == true && keyType == true) {
-            if (event.key == " "){
+            if (key == " "){
                 this.network.sendRespawnRequest();
             }
             return; // Ignore input if dead
         }
 
         // Movement keys
-        switch (event.key) {
+        switch (key) {
             case "w":
                 this.input.forward = keyType;
                 break;
@@ -178,24 +183,39 @@ export class Player {
             case " ":
                 this.input.jump = keyType;
                 break;
+            case "r":
+                this.viewModel?.reloadGun();
+                break;
             case "1":
                 if (keyType && this.input.equippedItemID !== 1) {
-                    this.input.equippedItemID = 1; // Switch to AK
-                    if (this.viewModel) {
-                        this.viewModel.loadGunModel(this.input.equippedItemID);
-                        this.input.equippedItemID = 1;
-                    }
+                    this.equipItem("primary");
                 }
                 break;
             case "2":
                 if (keyType && this.input.equippedItemID !== 0) {
-                    this.input.equippedItemID = 0; // Switch to Colt
-                    if (this.viewModel) {
-                        this.viewModel.loadGunModel(this.input.equippedItemID);
-                        this.input.equippedItemID = 0;
-                    }
+                    this.equipItem("secondary");
                 }
                 break;
+            case "3":
+                if (keyType && this.input.equippedItemID !== 2) {
+                    this.unequipItems(); 
+                }
+        }
+    }
+
+    public equipItem(slot: InventorySlot): void {
+        const item = this.inventory.getItemInSlot(slot);
+        console.log(`Equipping item from slot ${slot}:`, item);
+        if (item) {
+            this.input.equippedItemID = item.equipableId;
+            this.viewModel.loadModel(item);
+        }
+    }
+
+    private unequipItems(): void {
+        if (this.input.equippedItemID !== -1) {
+            this.input.equippedItemID = -1;
+            this.viewModel.loadModel(null);
         }
     }
 
@@ -424,6 +444,20 @@ export class Player {
             default:
                 console.warn(`Unknown sound type: ${soundType}`);
                 break;
+        }
+    }
+
+    public updateInventory(inventory: any): void {
+        // Rebuild PlayerInventory obj 
+        if (inventory.slots) {
+            const newInv = new PlayerInventory();
+            for (const slot in inventory.slots) {
+                if (inventory.slots.hasOwnProperty(slot)) {
+                    const item = inventory.slots[slot];
+                    newInv.addItem(slot as InventorySlot, item);
+                }
+            }
+            this.inventory = newInv;
         }
     }
 }

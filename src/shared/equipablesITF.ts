@@ -22,60 +22,28 @@ interface Equipable {
         bob_amt_lat: number;
         bob_amt_vert: number;
         bob_lower_amt: number;
+        kickback_speed: number;
     }
-    fireSound: string;
+}
+
+interface fireModes {
+    single: boolean;
+    auto: boolean;
 }
 
 export interface Gun extends Equipable {
     // in development currently
     type: "gun";
-    stats: {
+    gunStats: {
         damage: number;
         range: number;
         fireRate: number;
+        fireModes?: fireModes;
         magazineSize: number;
         reloadTime: number;
         durability: number;
-        ammoType?: string;
     };
+    fireSound: string;
 }
 
-export interface Melee extends Equipable {
-    // not implemented yet
-    type: "melee";
-    stats: {
-        damage: number;
-        range: number;
-        durability: number;
-    };
-}
-
-export interface Grenade extends Equipable {
-    // not implemented yet
-    type: "grenade";
-    stats: {
-        damage: number;
-        blastRadius: number;
-        throwRange: number;
-        durability: number;
-    };
-}
-
-export interface Tool extends Equipable {
-    // not implemented yet
-    type: "tool";
-    stats: {
-        durability: number;
-    };
-}
-
-export interface Armor extends Equipable {
-    // not implemented yet
-    type: "armor";
-    stats: {
-        durability: number;
-        protection: number;
-    };
-}
-
-export type EquipableItem = Gun | Melee | Grenade | Tool | Armor;
+export type EquipableItem = Gun;

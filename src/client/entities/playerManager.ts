@@ -1,8 +1,7 @@
 import { Scene } from "@babylonjs/core";
 import { NetworkClient } from "../network/clientNetwork";
 import { Player } from "./player";
-import { playSpacialSound } from "../sound/audioEngine";
-import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION";
+import { PlayerInventory } from "../../shared/playerInventory";
 
 export class PlayerManager {
     private players: Map<string, Player>;
@@ -148,8 +147,15 @@ export class PlayerManager {
             return;
         }
         if (player.isRemote) {
-            // sound
             player.playSoundOnPlayer(soundType, volume);
         }
     }
-} 
+
+    public updateLocalPlayerInventory(inventory: any): void {
+        const localPlayer = this.getLocalPlayer();
+        if (localPlayer) {
+            console.log("Updating local player inventory PM:", inventory);
+            localPlayer.updateInventory(inventory);
+        }
+    }
+}

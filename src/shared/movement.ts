@@ -24,7 +24,7 @@ export interface PlayerInput {
     right: boolean;
     jump: boolean;
     rotationY: number;
-    equippedItemID: number;
+    equippedItemID?: number;
 }
 
 const WALK_SPEED = 6.6;      // Max walking speed

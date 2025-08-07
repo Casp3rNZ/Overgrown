@@ -4,6 +4,7 @@ import { createGameScene } from "./scenes/testGameScene";
 import { NetworkClient } from "./network/clientNetwork";
 import { PlayerManager } from "./entities/playerManager";
 import "./UIX/UIMain"; 
+import { PlayerInventory } from "../shared/playerInventory";
 
 class Game {
     // Handles all client side game loops
@@ -70,6 +71,10 @@ class Game {
 
         this.network.onSoundFromServer = (data: any) => {
             this.playerManager.playSoundOnPlayer(data.playerID, data.soundType);
+        };
+
+        this.network.onUpdateInventory = (inventory: PlayerInventory) => {
+            this.playerManager.updateLocalPlayerInventory(inventory);
         };
 
         window.addEventListener("resize", () => {

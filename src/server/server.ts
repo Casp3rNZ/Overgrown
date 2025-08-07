@@ -1,9 +1,11 @@
 import { WebSocketServer, WebSocket } from "ws";
+import { createClient } from '@supabase/supabase-js';
+import { Vector3, Ray } from "@babylonjs/core";
 import { simulatePlayerMovement, PlayerState } from "../shared/movement.js";
 import { handleCollisions } from "../shared/collision.js";
-import { Vector3, Ray } from "@babylonjs/core";
+import { PlayerInventory } from "../shared/playerInventory.js";
 import { EQUIPPABLES } from "../shared/EQUIPPABLES_DEFINITION.js";
-import { createClient } from '@supabase/supabase-js';
+import { PlayerInventoryItem } from "../shared/playerInventoryItem.js";
 console.log("Overgrown - WSS listening on ws://localhost:8080");
 
 // Currently all connected players state is stored in memory, and updated every call from the client.
@@ -38,7 +40,8 @@ var players: Record<string, PlayerState> = {};
                         console.error("Invalid auth data:", data);
                         return;
                     }
-                    // TODO: setup auth token validation and error return to client.
+                    // TODO: setup auth token validation and error return to client to counter call spoofing.
+
                     ws.playerId = data.token.user.id;
                     ws.playerName = data.token.user.user_metadata.username;
                     // Initialize player state
@@ -60,16 +63,19 @@ var players: Record<string, PlayerState> = {};
                             right: false,
                             jump: false,
                             rotationY: 0,
-                            equippedItemID: 0
                         },
                         health: 100,
                         dead: false
                     };
+                    // Initialize player inventory
+                    let inventory = new PlayerInventory();
+                    inventory.addItem("secondary", new PlayerInventoryItem(0, "colt-12345"));
                     // Send the player's ID
                     ws.send(JSON.stringify({ 
                         type: "init", 
                         playerId: ws.playerId,
-                        username: ws.playerName
+                        username: ws.playerName,
+                        inventory: inventory
                     }));
                     // Broadcast new player
                     wss.clients.forEach(client => {
@@ -276,8 +282,8 @@ function handlePlayerHitDetection(
             console.error(`Item with ID ${data.equipID} not found for player ${closestHit}`);
             return; // Item not found, no damage to deal
         }
-        if (item.type === "gun" || item.type === "melee" || item.type === "grenade") {
-            hitDamage = item.stats.damage;
+        if (item.type === "gun") {
+            hitDamage = item.gunStats.damage || 0;
         }
         // Apply damage to the hit player
         hitPlayer.health -= hitDamage;

@@ -17,12 +17,18 @@ export function HUD ({ playerManager }: HUDProps) {
             const localPlayer = playerManager.getLocalPlayer();
             if (!localPlayer) return;
             setHealth(localPlayer.health);
+            if (localPlayer.input.equippedItemID <= -1) {
+                setAmmo(0);
+                setMagSize(0);
+                setEquippedItem(null);
+                return;
+            }
             const newItem = EQUIPPABLES[localPlayer.input.equippedItemID];
-            if(!equippedItem || newItem != equippedItem) {
+            if (!equippedItem || newItem != equippedItem) {
                 switch (newItem.type) {
                     case "gun":
-                        setAmmo(0);
-                        setMagSize(newItem.stats.magazineSize);
+                        setAmmo(localPlayer.viewModel.equippedItem.ammo);
+                        setMagSize(newItem.gunStats.magazineSize);
                         break;
                     default:
                         setAmmo(0);

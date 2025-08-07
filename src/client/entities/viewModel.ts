@@ -1,16 +1,18 @@
 import { Scene, AbstractMesh, ImportMeshAsync, Vector3, MeshBuilder, Color3, StandardMaterial, PointLight } from "@babylonjs/core";
 import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION.js";
+import { PlayerInventoryItem } from "../../shared/playerInventoryItem.js";
 export class ViewModel {
     public gunMesh: AbstractMesh | null = null;
     private bobTime: number = 0;
-    private equippedGunID:  number = 0;
+    private equippedItem:  PlayerInventoryItem | null = null;
     private muzzleEnd: any = null;
-    private RECOIL_KICKBACK_SPEED = 0.2;
     private recoilOffset = 0;
     private recoilVelocity = 0;
     private maxRecoilOffset = 0.04;
     private smoothedWeaponPosition: Vector3 = new Vector3(0, 0, 0);
     private smoothedWeaponRotation: Vector3 = new Vector3(0, Math.PI / -2, 0);
+    private isReloading: boolean = false;
+    private reloadTimeout: any = null;
 
     // IK LEGEND FOR GUN MODELS:
     // Left hand grip = "IK_Grip_L"
@@ -23,23 +25,37 @@ export class ViewModel {
 
     constructor(private scene: Scene, private camera: any) {}
 
-    public async loadGunModel(id: number): Promise<void> {
+    public async loadModel(item: PlayerInventoryItem): Promise<void> {
         try {
-            if (!EQUIPPABLES[id]) {
-                throw new Error(`Gun with ID ${id} does not exist in EQUIPPABLES.`);
+            if (item == null || item.equipableId == -1) {
+                if (this.gunMesh) {
+                    this.gunMesh.dispose();
+                    this.gunMesh = null;
+                }
+                return;
             }
-            const equppedItem = EQUIPPABLES[id];
+            if (!EQUIPPABLES[item.equipableId] || EQUIPPABLES[item.equipableId].type !== "gun") {
+                throw new Error(`Gun with ID ${item.equipableId} does not exist in EQUIPPABLES.`);
+            }
+            if (this.reloadTimeout) {
+                clearTimeout(this.reloadTimeout);
+                this.reloadTimeout = null;
+                this.isReloading = false;
+            }
+            
+            const newItemID = EQUIPPABLES[item.equipableId];
             // Load the gun model
-            const result = await ImportMeshAsync(equppedItem.modelPath, this.scene);
+            const result = await ImportMeshAsync(newItemID.modelPath, this.scene);
             if (!result.meshes || result.meshes.length === 0) {
-                throw new Error(`No meshes found in model for key: ${id}`);
+                throw new Error(`No meshes found in model for key: ${item.equipableId}`);
             }
             if (this.gunMesh) {
                 this.recoilVelocity = 0;
                 this.recoilOffset = 0;
                 this.gunMesh.dispose();
             }
-            this.equippedGunID = id;
+
+            this.equippedItem = item;
             this.gunMesh = result.meshes[0];
             this.gunMesh.parent = this.camera;
             // Make client-side gun model invisible to physics and raycasting
@@ -47,9 +63,9 @@ export class ViewModel {
             // Fix blender import rotation (rotation is 90 degrees off)
             this.gunMesh.rotation = new Vector3(0, Math.PI / -2, 0);
             this.gunMesh.position = new Vector3(
-                equppedItem.viewmodel.offset_x,
-                equppedItem.viewmodel.offset_y,
-                equppedItem.viewmodel.offset_z
+                newItemID.viewmodel.offset_x,
+                newItemID.viewmodel.offset_y,
+                newItemID.viewmodel.offset_z
             );
 
             // load mount points for IK
@@ -67,50 +83,54 @@ export class ViewModel {
         // TODO: Mouse look/aim feedback.
         if (!this.gunMesh) return;
         const lerpSmooth = 0.2;
+        var equippedItem = EQUIPPABLES[this.equippedItem.equipableId];
 
-        //#region Movement Bob
-        // Update gun bobbing effect based on movement
-        var equppedItem = EQUIPPABLES[this.equippedGunID];
+        // Movement Bob
         if (isMoving) {
-            this.bobTime += deltaTime * equppedItem.viewmodel.bob_cycle;
+            this.bobTime += deltaTime * equippedItem.viewmodel.bob_cycle;
         }else {
-            // Reset bob time when not moving
             this.bobTime = 0;
-            // Need to find a solution to smooth this, because bobtime -= 1 doesnt work.
         }
-        const bobZ = Math.sin(this.bobTime) * equppedItem.viewmodel.bob_cycle * equppedItem.viewmodel.bob_amt_lat;
-        const bobY = Math.abs(Math.cos(this.bobTime)) * equppedItem.viewmodel.bob_cycle * equppedItem.viewmodel.bob_amt_vert;
-        const lower = isMoving ? equppedItem.viewmodel.bob_lower_amt * 0.01 : 0;
+        const bobZ = Math.sin(this.bobTime) * equippedItem.viewmodel.bob_cycle * equippedItem.viewmodel.bob_amt_lat;
+        const bobY = Math.abs(Math.cos(this.bobTime)) * equippedItem.viewmodel.bob_cycle * equippedItem.viewmodel.bob_amt_vert;
+        const lower = isMoving ? equippedItem.viewmodel.bob_lower_amt * 0.01 : 0;
 
         const newWeaponPosition = new Vector3(
-            equppedItem.viewmodel.offset_x,
-            equppedItem.viewmodel.offset_y - lower + bobY,
-            equppedItem.viewmodel.offset_z + bobZ
+            equippedItem.viewmodel.offset_x,
+            equippedItem.viewmodel.offset_y - lower + bobY,
+            equippedItem.viewmodel.offset_z + bobZ
         );
         const newWeaponRotation = new Vector3(
-            equppedItem.viewmodel.offset_rotation_x,
-            equppedItem.viewmodel.offset_rotation_y,
-            equppedItem.viewmodel.offset_rotation_z
+            equippedItem.viewmodel.offset_rotation_x,
+            equippedItem.viewmodel.offset_rotation_y,
+            equippedItem.viewmodel.offset_rotation_z
         );
-        //#endregion
 
-        //#region Shooting Recoil
+        // Shooting Recoil
         if (this.recoilVelocity > 0) {
-            // Calculate initial recoil offset
+            // Calculate
             this.recoilOffset += this.recoilVelocity;
-            this.recoilVelocity -= deltaTime * this.RECOIL_KICKBACK_SPEED;
-            // Clamp recoil offset
+            this.recoilVelocity -= deltaTime * equippedItem.viewmodel.kickback_speed;
+            // Clamp
             if (this.recoilOffset < 0 || this.recoilOffset > this.maxRecoilOffset) {
                 this.recoilOffset = 0;
                 this.recoilVelocity = 0;
             }
 
-            // Apply recoil and rotation on z axis
             newWeaponPosition.z -= this.recoilOffset;
             newWeaponRotation.z += this.recoilOffset * 5;
-            // random side roll
             newWeaponRotation.x += (Math.random() - 0.5) * this.recoilOffset * 10;
         }
+
+        // Makeshift reload animation
+        if (this.isReloading) {
+            // Need to add these into weapon class
+            newWeaponPosition.y -= 0.05;
+            newWeaponPosition.x -= 0.05;
+            newWeaponRotation.x += 0.1;
+            newWeaponRotation.z -= 0.5;
+        }
+
         // Lerp initial position values
         this.smoothedWeaponPosition.x = this.lerp(this.smoothedWeaponPosition.x, newWeaponPosition.x, lerpSmooth);
         this.smoothedWeaponPosition.y = this.lerp(this.smoothedWeaponPosition.y, newWeaponPosition.y, lerpSmooth);
@@ -121,24 +141,30 @@ export class ViewModel {
         //this.smoothedWeaponRotation.y = this.lerp(this.smoothedWeaponRotation.y, newWeaponRotation.y, lerpSmooth);
         this.smoothedWeaponRotation.z = this.lerp(this.smoothedWeaponRotation.z, newWeaponRotation.z, lerpSmooth);
         
-        //#endregion 
         this.gunMesh.position = this.smoothedWeaponPosition;
         this.gunMesh.rotation = this.smoothedWeaponRotation;
     }
 
     public shoot(scene: Scene): any {
-        // Muzzle Flash
+        if(!this.gunMesh || !this.muzzleEnd) {
+            console.warn("No gun mesh loaded to shoot.");
+            return;
+        }
         this.playMuzzleFlash(scene, this.muzzleEnd);
-
-        // Recoil effect
         this.recoil(0.01);
+        if(this.equippedItem.ammo < 0) {
+            this.equippedItem.ammo = 0;
+        }else{
+            this.equippedItem.ammo--;
+        }
+        //TODO:
         // Barrel Smoke
-
         // Bullet Cartridge Eject
-
+        // Aim Recoil patterns
+        // Weapon Model Animations for trigger, firing pin/bolt etc (meshes not configured via blender yet).
     }
 
-    public async recoil(strength) {
+    private async recoil(strength) {
         if (!this.gunMesh || !this.muzzleEnd) {
             console.warn("No gun mesh loaded to apply recoil.");
             return;
@@ -146,17 +172,48 @@ export class ViewModel {
         this.recoilVelocity += strength;
     }
 
+    public reloadGun() {
+        // no serverside validation for reloading yet
+        if(!this.gunMesh || !this.muzzleEnd) {
+            console.warn("No gun mesh loaded to reload.");
+            return;
+        }
+        const equippedItem = EQUIPPABLES[this.equippedItem.equipableId];
+        if (!equippedItem || equippedItem.type !== "gun") {
+            console.warn(`Equipped item with ID ${this.equippedItem.equipableId} is not a gun.`);
+            return;
+        }
+        if (this.isReloading || this.equippedItem.ammo >= this.equippedItem.maxAmmo) {
+            return;
+        }
+        this.isReloading = true;
+        this.recoilVelocity = 0;
+        this.recoilOffset = 0;
+        this.reloadTimeout = setTimeout(() => {
+            if (EQUIPPABLES[this.equippedItem.equipableId] !== equippedItem) {
+                this.isReloading = false;
+                this.reloadTimeout = null;
+                console.warn(`Equipped gun ID changed during reload, cancelling reload.`);
+                return;
+            }
+            this.equippedItem.ammo = equippedItem.gunStats.magazineSize;
+            this.reloadTimeout = null;
+            this.isReloading = false;
+        }, equippedItem.gunStats.reloadTime * 1000);
+    }
+
     public isReadyToShoot(): boolean {
-        if (!this.gunMesh || !this.muzzleEnd) 
-        {
-            console.warn(`No gun mesh loaded to check readiness. mesh: ${this.gunMesh}, muzzleEnd: ${this.muzzleEnd}, equippedGunID: ${this.equippedGunID}`);
+        if(this.isReloading || this.equippedItem.ammo <= 0) {
+            return false;
+        }else if(!this.gunMesh || !this.muzzleEnd) {
+            console.warn(`No gun mesh loaded to check readiness. mesh: ${this.gunMesh}, muzzleEnd: ${this.muzzleEnd}, equippedGunID: ${this.equippedItem.equipableId}`);
             return false;
         } else {
             return true;
         }
     }
 
-    public playMuzzleFlash(scene: Scene, muzzleEnd: any) {
+    private playMuzzleFlash(scene: Scene, muzzleEnd: any) {
         if (!muzzleEnd) return;
 
         // math.random min max = math.ran
