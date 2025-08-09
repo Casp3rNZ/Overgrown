@@ -2,7 +2,7 @@ import { Engine } from "@babylonjs/core/Engines/engine";
 import { Scene } from "@babylonjs/core/scene";
 import { createGameScene } from "./scenes/testGameScene";
 import { NetworkClient } from "./network/clientNetwork";
-import { PlayerManager } from "./entities/playerManager";
+import { PlayerManager } from "./entities/players/playerManager";
 import "./UIX/UIMain"; 
 import { PlayerInventory } from "../shared/playerInventory";
 

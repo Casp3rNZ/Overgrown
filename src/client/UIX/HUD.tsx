@@ -1,6 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
-import { PlayerManager } from '../entities/playerManager';
+import { PlayerManager } from '../entities/players/playerManager';
 import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION";
+import { Crosshair } from "./crosshair";
 
 interface HUDProps {
     playerManager: PlayerManager;
@@ -43,9 +44,12 @@ export function HUD ({ playerManager }: HUDProps) {
     return (
         <div class="hud">
             {equippedItem && 
-                <div class="ammo">
-                    {ammo}/{magSize}
-                </div>
+                <>
+                    <Crosshair />
+                    <div class="ammo">
+                        {ammo}/{magSize}
+                    </div>
+                </>
             }
             <div class="hp"> {health}</div>
         </div>

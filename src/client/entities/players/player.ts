@@ -1,12 +1,12 @@
 import "@babylonjs/loaders/glTF";
 import { TransformNode, ShadowGenerator, Mesh, Scene, FreeCamera, Vector3, MeshBuilder, Tools, AnimationGroup, ImportMeshAsync, AbstractMesh, Color3, StandardMaterial, PointLight } from "@babylonjs/core";
-import { PlayerInput } from "../../shared/movement";
-import { NetworkClient } from "../network/clientNetwork";
-import { StateInterpolator } from "./stateInterpolator";
-import { ViewModel } from "./viewModel";
-import { playSpacialSound, playSound } from "../sound/audioEngine";
-import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION";
-import { PlayerInventory, InventorySlot } from "../../shared/playerInventory";
+import { PlayerInput } from "../../../shared/movement";
+import { NetworkClient } from "../../network/clientNetwork";
+import { StateInterpolator } from "../players/stateInterpolator";
+import { ViewModel } from "../players/viewModel";
+import { playSpacialSound, playSound } from "../../sound/audioEngine";
+import { EQUIPPABLES } from "../../../shared/EQUIPPABLES_DEFINITION";
+import { PlayerInventory, InventorySlot } from "../../../shared/playerInventory";
 
 export class Player {
     public playerModel: AbstractMesh;

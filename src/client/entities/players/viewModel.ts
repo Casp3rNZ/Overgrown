@@ -1,6 +1,6 @@
 import { Scene, AbstractMesh, ImportMeshAsync, Vector3, MeshBuilder, Color3, StandardMaterial, PointLight } from "@babylonjs/core";
-import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION.js";
-import { PlayerInventoryItem } from "../../shared/playerInventoryItem.js";
+import { EQUIPPABLES } from "../../../shared/EQUIPPABLES_DEFINITION.js";
+import { PlayerInventoryItem } from "../../../shared/playerInventoryItem.js";
 export class ViewModel {
     public gunMesh: AbstractMesh | null = null;
     private bobTime: number = 0;

@@ -1,5 +1,5 @@
 import { Scene } from "@babylonjs/core";
-import { NetworkClient } from "../network/clientNetwork";
+import { NetworkClient } from "../../network/clientNetwork";
 import { Player } from "./player";
 
 export class PlayerManager {
