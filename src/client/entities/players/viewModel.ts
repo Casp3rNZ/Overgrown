@@ -51,7 +51,6 @@ export class ViewModel {
             const newItem = EQUIPPABLES[item.equipableId];
             // Load the gun model
             const model = MeshCache.getMeshCacheEntry(item.equipableId.toString());
-            console.log("Cloned gun mesh:", model);
             this.equippedItem = item;
             this.gunMesh = model.mesh;
             this.gunMesh.parent = this.camera;
@@ -67,6 +66,7 @@ export class ViewModel {
 
             // load mount points for IK
             this.muzzleEnd = model.transformNodes.find(node => node.name == "Muzzle_Origin");
+            this.muzzleEnd.parent = this.gunMesh;
             if (!this.muzzleEnd) {
                 console.log("Muzzle_Origin not found in gun mesh!", this.gunMesh);
             }else{

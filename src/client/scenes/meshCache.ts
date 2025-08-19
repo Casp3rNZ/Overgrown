@@ -26,7 +26,6 @@ export class MeshCache {
         const root = result.meshes[0];
         root.setEnabled(false);
         root.isVisible = false;
-        console.log(root)
         root.getChildMeshes().forEach(child => {
             child.setEnabled(false);
             child.isVisible = false;
@@ -40,7 +39,6 @@ export class MeshCache {
     // Clone operation is okay because each mesh is disposed on unequip
     static getMeshCacheEntry(key: string): MeshCacheEntry {
         const entry = this.cache.get(key);
-        console.log(`Retrieved mesh cache entry for key: ${key}`);
         if (!entry) return undefined;
         const clone = entry.mesh.clone(`${key}_clone`, null, false);
         clone.setEnabled(true);

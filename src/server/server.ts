@@ -148,6 +148,7 @@ var players: Record<string, PlayerState> = {};
 function startTPSLoop(TPS: number) {
     const tickDelay = 1000 / TPS;
     let lastTick = Date.now();
+    let lastPlayerStatesSent = new Map<string, Record<string, PlayerState>>();
 
     function tick() {
         const now = Date.now();
@@ -167,21 +168,26 @@ function startTPSLoop(TPS: number) {
             // Handle collisions
             const collisionCorrection = handleCollisions(players[id], players);
             if (collisionCorrection) {
-                // Update player position with correction
                 players[id].position = collisionCorrection.position;
-                
-                // Add correction to state for client
                 players[id].correction = collisionCorrection;
             }
         }
 
         // Broadcast state
-        wss.clients.forEach(client => {
-            if (client.readyState == 1) {
+        (wss as WebSocketServer).clients.forEach((client: PlayerWebSocket) => {
+            let newPlayersToSend: Record<string, PlayerState> = {};
+            for (const [id, player] of Object.entries(players)) {
+                if (JSON.stringify(lastPlayerStatesSent.get(id)) != JSON.stringify(player)) {
+                    newPlayersToSend[id] = player;
+                }
+            }
+            if (client.readyState == 1 && Object.keys(newPlayersToSend).length > 0) {
                 client.send(JSON.stringify({ 
                     type: "state", 
-                    players: players 
+                    players: newPlayersToSend 
                 }));
+                lastPlayerStatesSent.set(client.playerId, players);
+                console.log(`Sent state to ${client.playerName} (${client.playerId})`);
             }
         });
 
