@@ -7,6 +7,7 @@ import { ViewModel } from "../players/viewModel";
 import { playSpacialSound, playSound } from "../../sound/audioEngine";
 import { EQUIPPABLES } from "../../../shared/EQUIPPABLES_DEFINITION";
 import { PlayerInventory, InventorySlot } from "../../../shared/playerInventory";
+import { MeshCache } from "../../scenes/meshCache";
 
 export class Player {
     public playerModel: AbstractMesh;
@@ -52,21 +53,22 @@ export class Player {
             this.inventory = new PlayerInventory();
             this.viewModel = new ViewModel(scene, this.camera);
         } else {
-            this.createplayerModel(scene)
+            this.createplayerModel();
         }
     }
 
-    private async createplayerModel(scene: Scene): Promise<void> {
+    private async createplayerModel(): Promise<void> {
         if (!this.isRemote) {
             console.error("createplayerModel should not be called for local player.");
             return;
         }
         // Load GLB model and parent to collision mesh
-        let result = await ImportMeshAsync("/assets/playerModels/testPlayer.glb", scene);
-        if (!result.meshes) {
-            throw new Error(`Remote Player Model - Error loading remote player model`);
+        const model = MeshCache.getMeshCacheEntry("player");
+        if (!model) {
+            console.error("Failed to load player mesh");
+            return;
         }
-        this.playerModel = result.meshes[0];
+        this.playerModel = model.mesh;
         this.playerModel.parent = this.collisionMesh;
         this.playerModel.position = new Vector3(0, -1, 0);
         this.playerModel.receiveShadows = true;
@@ -75,11 +77,10 @@ export class Player {
         }
 
         // Set up animations
-        result.animationGroups.forEach((animGroup) => {
+        model.animationGroups?.forEach(animGroup => {
             this.playerAnimations[animGroup.name] = animGroup;
         });
-
-        this.playAnimation["idle"]
+        this.playAnimation("idle");
 
         // PRE-IK remote player weapon handling
         this.loadRemotePlayerGunModel(this.input.equippedItemID); 
@@ -101,7 +102,7 @@ export class Player {
     }
 
     private playAnimation(name: string): void {
-        if (this.currentAnimation === name) return; // Already playing this animation
+        if (this.currentAnimation == name) return; // Already playing this animation
         Object.values(this.playerAnimations).forEach(anim => anim.stop());
         if (this.playerAnimations[name]) {
             this.playerAnimations[name].play(true);
@@ -373,15 +374,18 @@ export class Player {
     }
 
     private async loadRemotePlayerGunModel(equippedItemID: number): Promise<void> {
+        if (equippedItemID == -1 || equippedItemID == null) {
+            return; // No gun equipped
+        }
         console.log(`Loading remote player gun model for equippedItemID: ${equippedItemID}`);
-        let result = await ImportMeshAsync(EQUIPPABLES[equippedItemID].modelPath, this.scene);
-        if (!result.meshes) {
+        let model = MeshCache.getMeshCacheEntry(equippedItemID.toString());
+        if (!model.mesh) {
             throw new Error(`Remote Player Guns - No meshes found in EQUIPPABLES for key: ${equippedItemID}`);
         }
         if (this.gunMesh) {
             this.gunMesh.dispose();
         }
-        this.gunMesh = result.meshes[0];
+        this.gunMesh = model.mesh;
         this.gunMesh.parent = this.playerModel;
         this.gunMesh.isPickable = false; // not prone to physics or raycasting
         this.gunMesh.position = new Vector3(-0.1, 1.4, 0.4)

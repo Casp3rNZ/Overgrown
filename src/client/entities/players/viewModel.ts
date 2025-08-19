@@ -1,6 +1,7 @@
 import { Scene, AbstractMesh, ImportMeshAsync, Vector3, MeshBuilder, Color3, StandardMaterial, PointLight } from "@babylonjs/core";
 import { EQUIPPABLES } from "../../../shared/EQUIPPABLES_DEFINITION.js";
 import { PlayerInventoryItem } from "../../../shared/playerInventoryItem.js";
+import { MeshCache } from "../../scenes/meshCache.js";
 export class ViewModel {
     public gunMesh: AbstractMesh | null = null;
     private bobTime: number = 0;
@@ -34,44 +35,44 @@ export class ViewModel {
                 }
                 return;
             }
-            if (!EQUIPPABLES[item.equipableId] || EQUIPPABLES[item.equipableId].type !== "gun") {
-                throw new Error(`Gun with ID ${item.equipableId} does not exist in EQUIPPABLES.`);
+            if (!EQUIPPABLES[item.equipableId]) {
+                throw new Error(`Item with ID ${item.equipableId} does not exist in EQUIPPABLES.`);
             }
             if (this.reloadTimeout) {
                 clearTimeout(this.reloadTimeout);
                 this.reloadTimeout = null;
                 this.isReloading = false;
             }
-            
-            const newItemID = EQUIPPABLES[item.equipableId];
-            // Load the gun model
-            const result = await ImportMeshAsync(newItemID.modelPath, this.scene);
-            if (!result.meshes || result.meshes.length === 0) {
-                throw new Error(`No meshes found in model for key: ${item.equipableId}`);
-            }
             if (this.gunMesh) {
                 this.recoilVelocity = 0;
                 this.recoilOffset = 0;
                 this.gunMesh.dispose();
             }
-
+            const newItem = EQUIPPABLES[item.equipableId];
+            // Load the gun model
+            const model = MeshCache.getMeshCacheEntry(item.equipableId.toString());
+            console.log("Cloned gun mesh:", model);
             this.equippedItem = item;
-            this.gunMesh = result.meshes[0];
+            this.gunMesh = model.mesh;
             this.gunMesh.parent = this.camera;
             // Make client-side gun model invisible to physics and raycasting
             this.gunMesh.isPickable = false;
             // Fix blender import rotation (rotation is 90 degrees off)
             this.gunMesh.rotation = new Vector3(0, Math.PI / -2, 0);
             this.gunMesh.position = new Vector3(
-                newItemID.viewmodel.offset_x,
-                newItemID.viewmodel.offset_y,
-                newItemID.viewmodel.offset_z
+                newItem.viewmodel.offset_x,
+                newItem.viewmodel.offset_y,
+                newItem.viewmodel.offset_z
             );
 
             // load mount points for IK
-            this.muzzleEnd = this.gunMesh.getChildTransformNodes().find(node => node.name == "Muzzle_Origin");
-            this.muzzleEnd.scaling = new Vector3(0.01, 0.01, 0.01);
-            //console.log(`Loaded gun model: ${equppedItem.name} with ID: ${id}`);
+            this.muzzleEnd = model.transformNodes.find(node => node.name == "Muzzle_Origin");
+            if (!this.muzzleEnd) {
+                console.log("Muzzle_Origin not found in gun mesh!", this.gunMesh);
+            }else{
+                this.muzzleEnd.scaling = new Vector3(0.01, 0.01, 0.01);
+            }
+            //console.log(`Loaded gun model: ${equippedItem.name} with ID: ${id}`);
         } catch (error) {
             console.error("Error loading gun model:", error);
         }

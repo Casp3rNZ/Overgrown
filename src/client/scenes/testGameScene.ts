@@ -1,7 +1,9 @@
 import {Scene, HemisphericLight, ShadowGenerator, MeshBuilder, StandardMaterial, Color3, Vector3, DirectionalLight, Color4 } from "@babylonjs/core";
+import { MeshCache } from "./meshCache";
 
 export function createGameScene(scene: Scene) {
-
+    MeshCache.preloadAllMeshes(scene);
+    
     // Set the background color of the scene
     scene.clearColor = new Color4(0.5, 0.7, 1, 1);
 
@@ -33,7 +35,7 @@ export function createGameScene(scene: Scene) {
         height: 3,
         depth: 1,
     }, scene);
-    box.position = new Vector3(5, 1, -5);
+    box.position = new Vector3(5, 0, -5);
     box.checkCollisions = true;
 
     // Enable Shadows
@@ -42,5 +44,4 @@ export function createGameScene(scene: Scene) {
     ground.receiveShadows = true;
     (scene as any).shadowGenerator = shadowGenerator;
     return { ground, box }
-
 }

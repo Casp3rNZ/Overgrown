@@ -29,7 +29,12 @@ class Game {
     }
 
     private async init(): Promise<void> {
-        const { ground, box } = createGameScene(this.scene);
+        console.log("Starting scene setup...");
+        try {
+            const { ground, box } = createGameScene(this.scene);
+        } catch (error) {
+            console.error("Error creating game scene:", error);
+        }
         this.network.onReady = (playerId: string) => {
             console.log("Network client ready with player ID:", playerId);
             const localPlayer = this.playerManager.createLocalPlayer(playerId);
@@ -44,7 +49,7 @@ class Game {
                 this.scene.render();
             });
         };
-
+        
         // handle updated player states from server
         this.network.onState = (state: any) => {
             this.playerManager.updateFromServer(state);

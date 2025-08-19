@@ -30,7 +30,6 @@ var players: Record<string, PlayerState> = {};
 
 (wss as WebSocketServer).on("connection", (ws: PlayerWebSocket) => {
     console.log("New player connected");
-
     ws.on("message", (msg) => {
         try {
             let data = JSON.parse(msg.toString());
