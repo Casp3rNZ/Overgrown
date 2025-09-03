@@ -4,7 +4,6 @@ import { EQUIPPABLES } from "../../shared/EQUIPPABLES_DEFINITION";
 type MeshCacheEntry = {
     mesh: AbstractMesh;
     animationGroups: AnimationGroup[];
-    transformNodes: TransformNode[];
 };
 
 export class MeshCache {
@@ -33,7 +32,6 @@ export class MeshCache {
         this.cache.set(key, {
             mesh: root,
             animationGroups: result.animationGroups,
-            transformNodes: result.transformNodes
         });
     }
     // Clone operation is okay because each mesh is disposed on unequip
@@ -47,11 +45,10 @@ export class MeshCache {
             mesh.isVisible = true;
             mesh.setEnabled(true);
         });
-
+        console.log("tnode test",clone.getChildTransformNodes(false));
         return {
             mesh: clone,
             animationGroups: entry.animationGroups,
-            transformNodes: entry.transformNodes
         };
     }
 }

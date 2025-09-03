@@ -65,12 +65,12 @@ export class ViewModel {
             );
 
             // load mount points for IK
-            this.muzzleEnd = model.transformNodes.find(node => node.name == "Muzzle_Origin");
-            this.muzzleEnd.parent = this.gunMesh;
+            this.muzzleEnd = model.mesh.getChildTransformNodes(false).find(node => node.name.includes("Muzzle_Origin"));
             if (!this.muzzleEnd) {
-                console.log("Muzzle_Origin not found in gun mesh!", this.gunMesh);
+                console.error("Muzzle_Origin not found in gun mesh!", this.gunMesh);
             }else{
-                this.muzzleEnd.scaling = new Vector3(0.01, 0.01, 0.01);
+                //this.muzzleEnd.scaling = new Vector3(0.01, 0.01, 0.01);
+                this.muzzleEnd.scaling = new Vector3(0.2, 0.2, 0.2);
             }
             //console.log(`Loaded gun model: ${equippedItem.name} with ID: ${id}`);
         } catch (error) {
@@ -151,7 +151,7 @@ export class ViewModel {
             console.warn("No gun mesh loaded to shoot.");
             return;
         }
-        this.playMuzzleFlash(scene, this.muzzleEnd);
+        this.playMuzzleFlash(scene);
         this.recoil(0.01);
         if(this.equippedItem.ammo < 0) {
             this.equippedItem.ammo = 0;
@@ -214,36 +214,30 @@ export class ViewModel {
         }
     }
 
-    private playMuzzleFlash(scene: Scene, muzzleEnd: any) {
-        if (!muzzleEnd) return;
-
-        // math.random min max = math.ran
-
+    private playMuzzleFlash(scene: Scene) {
+        if (!this.muzzleEnd) return;
         // Create a small plane for the flash
         // there is currently a bug where the mesh is somehow bigger when equipping different guns.
-        const minSize = 0.2;
-        const maxSize = 0.4;
+        const minSize = 0.02;
+        const maxSize = 0.04;
         const flashSize = Math.random() * (maxSize - minSize) + minSize;
+        const flashMat = new StandardMaterial("muzzleFlashMat", scene);
+        flashMat.emissiveColor = new Color3(1, 0.9 + Math.random() * 0.1, 0.6 + Math.random() * 0.2);
+        flashMat.disableLighting = false;
         const flashMesh = MeshBuilder.CreatePlane("muzzleFlash", { size: flashSize }, scene);
-        flashMesh.parent = muzzleEnd;
+        flashMesh.material = flashMat;
+        flashMesh.parent = this.muzzleEnd;
         flashMesh.rotation = new Vector3(
             Math.random() * Math.PI,
             Math.random() * Math.PI,
             Math.random() * Math.PI
         );
-        // Playing with emissive matt planes
-        const flashMat = new StandardMaterial("muzzleFlashMat", scene);
-        flashMat.emissiveColor = new Color3(1, 0.9 + Math.random() * 0.1, 0.6 + Math.random() * 0.2);
-        flashMat.disableLighting = false;
-        flashMesh.material = flashMat;
-
         // Basic light flash
-        const flashLight = new PointLight("muzzleFlashLight", muzzleEnd.getAbsolutePosition(), scene);
+        const flashLight = new PointLight("muzzleFlashLight", this.muzzleEnd.getAbsolutePosition(), scene);
         flashLight.diffuse = new Color3(1, 0.8, 0.6);
         flashLight.intensity = 0.5;
         flashLight.range = 10;
 
-        // Remove flash after a short time
         setTimeout(() => {
             flashMesh.dispose();
             flashLight.dispose();

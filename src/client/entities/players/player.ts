@@ -222,7 +222,8 @@ export class Player {
         if (this.isRemote) return; // Remote players don't handle mouse input
         
         window.addEventListener("mousemove", (event) => {
-            if (document.pointerLockElement === scene.getEngine().getRenderingCanvas()) {
+            event.preventDefault(); // prevent mousemove and mouseclick functions from stopping eachother.
+            if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
                 const sensitivity = 0.0013;
                 // yaw left/right
                 if (this.collisionMesh) {
@@ -235,7 +236,6 @@ export class Player {
                     // Clamp pitch to avoid flipping
                     this.camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotation.x));
                 }
-                // update input rotation
                 this.input.rotationY = this.collisionMesh.rotation.y;
             }
         });
@@ -246,12 +246,12 @@ export class Player {
         //});
 
         window.addEventListener("pointerdown", (event) => {
+            event.preventDefault(); 
             this.handleMouseButtonEvent(event, scene);
         });
         
     }
 
-    // Called every frame
     public tick(): void {
         if (this.isRemote) return; // Remote players send input on their own client
         if (this.dead) return; // Ignore input if dead
@@ -261,7 +261,6 @@ export class Player {
         this.lastInput = { ...this.input };
     }
 
-    // Called when server sends new player state
     public updateFromServer(state: any): void {
         if (!state.player) {
             console.warn("No players in state:", state);
@@ -291,7 +290,6 @@ export class Player {
         }
     }
 
-    // Called every frame to update visual position
     public updateVisuals(): void {
         const interpolatedState = this.stateInterpolator.getInterpolatedState();
         if (interpolatedState) {

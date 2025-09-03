@@ -148,7 +148,7 @@ var players: Record<string, PlayerState> = {};
 function startTPSLoop(TPS: number) {
     const tickDelay = 1000 / TPS;
     let lastTick = Date.now();
-    let lastPlayerStatesSent = new Map<string, Record<string, PlayerState>>();
+    let lastPlayerStatesSent = new Map<PlayerWebSocket, Map<string, string>>();
 
     function tick() {
         const now = Date.now();
@@ -175,10 +175,19 @@ function startTPSLoop(TPS: number) {
 
         // Broadcast state
         (wss as WebSocketServer).clients.forEach((client: PlayerWebSocket) => {
+            if (client.readyState != 1 ) return;
+            let clientStateMap = lastPlayerStatesSent.get(client);
+            if(!clientStateMap) {
+                clientStateMap = new Map<string, string>();
+                lastPlayerStatesSent.set(client, clientStateMap);
+            }
+
             let newPlayersToSend: Record<string, PlayerState> = {};
             for (const [id, player] of Object.entries(players)) {
-                if (JSON.stringify(lastPlayerStatesSent.get(id)) != JSON.stringify(player)) {
+                const hash = JSON.stringify(player);
+                if(clientStateMap.get(id) != hash) {
                     newPlayersToSend[id] = player;
+                    clientStateMap.set(id, hash);
                 }
             }
             if (client.readyState == 1 && Object.keys(newPlayersToSend).length > 0) {
@@ -186,8 +195,6 @@ function startTPSLoop(TPS: number) {
                     type: "state", 
                     players: newPlayersToSend 
                 }));
-                lastPlayerStatesSent.set(client.playerId, players);
-                console.log(`Sent state to ${client.playerName} (${client.playerId})`);
             }
         });
 
