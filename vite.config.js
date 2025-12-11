@@ -10,4 +10,18 @@ export default defineConfig({
   build: {
     outDir: 'dist'
   },
+  assetsInclude: ['**/*.babylon'],
+  plugins: [
+    {
+      name: 'babylon-file-plugin',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url?.endsWith('.babylon')) {
+            res.setHeader('Content-Type', 'application/json');
+          }
+          next();
+        });
+      }
+    }
+  ]
 })

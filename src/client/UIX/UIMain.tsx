@@ -1,12 +1,8 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { ChatBox } from "./chatBox";
-import Game from "../game";
-import { render } from "preact";
 import { HUD } from "./HUD";
 import { DeathScreen } from "./deathScreen";
 import { initAudioEngine } from "../sound/audioEngine";
-import { UserAuthForm } from "./userAuthForm";
-import { loadTestMenuScene } from "../testSceneLoader";
 import '../CSS/gameUI.css';
 
 export function UIRoot({ game }) {
