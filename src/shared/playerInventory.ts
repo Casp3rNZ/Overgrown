@@ -2,7 +2,6 @@ import { PlayerInventoryItem } from "./playerInventoryItem";
 
 // CS-GO / Battlefield inspired inventory system.
 // Designed for basic arena shooter gamemodes, no grid system for extraction shooter gamemode yet.
-// - Not implemented yet.
 export type InventorySlot = "primary" | "secondary" | "melee" | "grenade" | "utility";
 export class PlayerInventory {
     private slots: Record<InventorySlot, PlayerInventoryItem | null> = {

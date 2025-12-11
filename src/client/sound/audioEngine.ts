@@ -6,8 +6,7 @@ let audioEngine: AudioEngineV2;
 export async function initAudioEngine(scene: Scene) {
     if (audioEngine) return;
     const SOUND_DIR = "/assets/sounds/"
-    audioEngine = await CreateAudioEngineAsync({
-    });
+    audioEngine = await CreateAudioEngineAsync({});
     await audioEngine.unlockAsync();
 
     // preload all sounds for now
@@ -25,7 +24,11 @@ export async function initAudioEngine(scene: Scene) {
     // Need to manually set the audio listener to the active camera.
     // Usually BabylonJS does this automatically, but i suspect this is a bug because scene.activeCamera is parented to a mesh that has its position "hard-coded" by our custom movement physics updates.
     // Possibly will be fixed in future.
-    audioEngine.listener.attach(scene.activeCamera);
+    try {
+        audioEngine.listener.attach(scene.activeCamera);
+    }catch(e){
+        console.error("Error attaching audio listener to camera:", e);
+    }
 }
 
 export async function playSpacialSound(type: string, mesh: Mesh | AbstractMesh, volume: number = 1) {

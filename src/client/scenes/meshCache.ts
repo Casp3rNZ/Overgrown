@@ -45,7 +45,6 @@ export class MeshCache {
             mesh.isVisible = true;
             mesh.setEnabled(true);
         });
-        console.log("tnode test",clone.getChildTransformNodes(false));
         return {
             mesh: clone,
             animationGroups: entry.animationGroups,

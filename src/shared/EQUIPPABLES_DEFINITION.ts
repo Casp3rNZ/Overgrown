@@ -31,7 +31,7 @@ export const EQUIPPABLES: Record<number, EquipableItem> = {
         gunStats: {
             damage: 12,
             range: 65,
-            fireRate: 0.25,
+            fireRate: 7,
             magazineSize: 7,
             reloadTime: 1.5,
             durability: 100,
@@ -63,7 +63,7 @@ export const EQUIPPABLES: Record<number, EquipableItem> = {
         gunStats: {
             damage: 30,
             range: 150,
-            fireRate: 0.1,
+            fireRate: 10,
             magazineSize: 30,
             reloadTime: 2.5,
             durability: 150,

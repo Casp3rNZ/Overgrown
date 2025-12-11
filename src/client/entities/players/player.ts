@@ -38,6 +38,9 @@ export class Player {
     public gunMesh: AbstractMesh | null = null;
     public muzzleEnd: TransformNode | null = null;
     private shadowGenerator?: ShadowGenerator;
+    private isMouseDown: boolean = false;
+    private lastFireTime: number = 0;
+    private fireRateTimer: any = null;
 
     constructor(scene: Scene, network: NetworkClient, playerId: string, isRemote: boolean = false, shadowGenerator?: ShadowGenerator) {
         this.playerId = playerId;
@@ -51,7 +54,7 @@ export class Player {
             this.createCamera(scene);
             this.setupMouseInput(scene);
             this.inventory = new PlayerInventory();
-            this.viewModel = new ViewModel(scene, this.camera);
+            this.viewModel = new ViewModel(this.camera);
         } else {
             this.createplayerModel();
         }
@@ -73,7 +76,7 @@ export class Player {
         this.playerModel.position = new Vector3(0, -1, 0);
         this.playerModel.receiveShadows = true;
         if (this.shadowGenerator) {
-        this.shadowGenerator.addShadowCaster(this.playerModel);
+            this.shadowGenerator.addShadowCaster(this.playerModel);
         }
 
         // Set up animations
@@ -221,8 +224,10 @@ export class Player {
     private setupMouseInput(scene: Scene): void {
         if (this.isRemote) return; // Remote players don't handle mouse input
         
-        window.addEventListener("mousemove", (event) => {
-            event.preventDefault(); // prevent mousemove and mouseclick functions from stopping eachother.
+        window.addEventListener("pointermove", (event) => {
+            event.preventDefault(); 
+            event.stopPropagation();
+            
             if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
                 const sensitivity = 0.0013;
                 // yaw left/right
@@ -238,16 +243,30 @@ export class Player {
                 }
                 this.input.rotationY = this.collisionMesh.rotation.y;
             }
-        });
+        }, { passive: false }); // passive: false allows preventDefault to work
 
-        // Deprecated: Use pointerdown instead for better compatibility
-        //window.addEventListener("mousedown", (event) => {
-        //    this.handleMouseButtonEvent(event, scene);
-        //});
-
+        // Handle mouse button down
         window.addEventListener("pointerdown", (event) => {
             event.preventDefault(); 
-            this.handleMouseButtonEvent(event, scene);
+            event.stopPropagation();
+            
+            if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
+                if (event.button === 0) { // Left mouse button
+                    this.isMouseDown = true;
+                    this.attemptToFire(scene); // Fire immediately on click
+                }
+            }
+        });
+
+        // Handle mouse button up
+        window.addEventListener("pointerup", (event) => {
+            if (event.button === 0) {
+                this.isMouseDown = false;
+                if (this.fireRateTimer) {
+                    clearTimeout(this.fireRateTimer);
+                    this.fireRateTimer = null;
+                }
+            }
         });
         
     }
@@ -324,38 +343,73 @@ export class Player {
         }
     }
 
-    private handleMouseButtonEvent(event: any, scene: Scene): void {
-        if (this.dead) return; // Ignore input if dead
-        if (this.isRemote) return;
-        if (document.pointerLockElement == scene.getEngine().getRenderingCanvas()) {
-            if(event.button == 0 && this.viewModel) { // Left mouse button
-                // request client side shot to check animation/fire state, if returned true, send request to server. 
-                if (this.viewModel.isReadyToShoot()) {
-                    // Network
-                    let directionVector = this.getDirectionFromRotation(this.collisionMesh.rotation.y, this.camera.rotation.x);
-                    let originPos = this.collisionMesh.position.add(new Vector3(0, .6, 0)); // Position at head height
-                    this.network.sendShootRequest(originPos, directionVector);
+    private attemptToFire(scene: Scene): void {
+        if (this.dead || this.isRemote || !this.viewModel) return;
+        
+        const equippedItem = EQUIPPABLES[this.input.equippedItemID];
+        if (!equippedItem || equippedItem.type !== "gun") return;
 
-                    // Trigger local sound
-                    let gunSound = EQUIPPABLES[this.input.equippedItemID].fireSound;
-                    playSound(gunSound);
-
-                    // Trigger local animations
-                    this.viewModel.shoot(scene);
-                    
-                    // Debug
-                    //const endPos = originPos.add(directionVector.scale(100)); // 100 units forward
-                    //const DEBUG_shootLine = MeshBuilder.CreateLines("DEBUG_shootLine", {
-                    //    points: [originPos, endPos],
-                    //    updatable: true,
-                    //}, scene);
-                    //DEBUG_shootLine.color = new Color3(1, 0, 0); // Red color for debug
-                    //setTimeout(() => {
-                    //    DEBUG_shootLine.dispose(); // Remove after 2 second
-                    //}, 2000);
-                }
+        // Check if we can shoot
+        if (!this.viewModel.isReadyToShoot()) {
+            // If out of ammo, trigger reload automatically
+            const viewModelItem = this.viewModel.getEquippedItem();
+            if (viewModelItem && viewModelItem.ammo <= 0) {
+                this.viewModel.reloadGun();
             }
+            // Stop the firing loop
+            this.isMouseDown = false;
+            return;
         }
+
+        // Check fire rate timing
+        const currentTime = performance.now();
+        const fireRateMs = 1000 / equippedItem.gunStats.fireRate;
+        
+        if (currentTime - this.lastFireTime < fireRateMs) {
+            // Too soon to fire again, schedule next attempt if in auto mode
+            if (this.isMouseDown && equippedItem.gunStats.fireModes?.auto) {
+                const remainingTime = fireRateMs - (currentTime - this.lastFireTime);
+                this.fireRateTimer = setTimeout(() => this.attemptToFire(scene), remainingTime);
+            }
+            return;
+        }
+
+        this.executeShot(scene);
+        this.lastFireTime = currentTime;
+
+        // Schedule next shot if in auto mode and mouse still down
+        if (this.isMouseDown && equippedItem.gunStats.fireModes?.auto) {
+            this.fireRateTimer = setTimeout(() => this.attemptToFire(scene), fireRateMs);
+        }
+    }
+
+    private executeShot(scene: Scene): void {
+        if (!this.viewModel) return;
+        
+        const equippedItem = EQUIPPABLES[this.input.equippedItemID];
+        if (!equippedItem || equippedItem.type !== "gun") return;
+
+        // Network
+        let directionVector = this.getDirectionFromRotation(this.collisionMesh.rotation.y, this.camera.rotation.x);
+        let originPos = this.collisionMesh.position.add(new Vector3(0, .6, 0)); // Position at head height
+        this.network.sendShootRequest(originPos, directionVector);
+
+        // Trigger local sound
+        playSound(equippedItem.fireSound);
+
+        // Trigger local animations
+        this.viewModel.shoot(scene);
+        
+        // Debug
+        //const endPos = originPos.add(directionVector.scale(100)); // 100 units forward
+        //const DEBUG_shootLine = MeshBuilder.CreateLines("DEBUG_shootLine", {
+        //    points: [originPos, endPos],
+        //    updatable: true,
+        //}, scene);
+        //DEBUG_shootLine.color = new Color3(1, 0, 0); // Red color for debug
+        //setTimeout(() => {
+        //    DEBUG_shootLine.dispose(); // Remove after 2 second
+        //}, 2000);
     }
 
     private getDirectionFromRotation(yaw: number, pitch: number): Vector3 {

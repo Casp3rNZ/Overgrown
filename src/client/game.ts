@@ -6,7 +6,7 @@ import { PlayerManager } from "./entities/players/playerManager";
 import "./UIX/UIMain"; 
 import { PlayerInventory } from "../shared/playerInventory";
 
-class Game {
+export class Game {
     // Handles all client side game loops
     private engine: Engine;
     private scene: Scene;

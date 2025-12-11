@@ -24,7 +24,7 @@ export class ViewModel {
     // client-side gun model handled by viewmodel
     // remote player gun models, and upper body animations handled by IK system (not built yet)
 
-    constructor(private scene: Scene, private camera: any) {}
+    constructor(private camera: any) {}
 
     public async loadModel(item: PlayerInventoryItem): Promise<void> {
         try {
@@ -246,6 +246,10 @@ export class ViewModel {
 
     private lerp = (a: number, b: number, t: number): number => {
         return a + (b - a) * t;
+    }
+
+    public getEquippedItem(): PlayerInventoryItem | null {
+        return this.equippedItem;
     }
 
 }
