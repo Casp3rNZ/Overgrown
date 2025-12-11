@@ -40,7 +40,6 @@ var players: Record<string, PlayerState> = {};
                         return;
                     }
                     // TODO: setup auth token validation and error return to client to counter call spoofing.
-
                     ws.playerId = data.token.user.id;
                     ws.playerName = data.token.user.user_metadata.username;
                     // Initialize player state
@@ -69,6 +68,7 @@ var players: Record<string, PlayerState> = {};
                     // Initialize player inventory
                     let inventory = new PlayerInventory();
                     inventory.addItem("secondary", new PlayerInventoryItem(0, "colt-12345"));
+                    inventory.addItem("primary", new PlayerInventoryItem(1, "ak47-67890"));
                     // Send the player's ID
                     ws.send(JSON.stringify({ 
                         type: "init", 

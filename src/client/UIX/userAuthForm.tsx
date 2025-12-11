@@ -33,11 +33,16 @@ export function UserAuthForm( { loadGameScene } ) {
 
     return (
         <div className="auth-container">
-            {menuState == "login" ? (
-                <LoginForm onSuccess={() => setAuthComplete(true)} />
-            ) : (
-                <RegisterForm onSuccess={() => setMenuState("login")} />
-            )}
+            {(() => {
+                switch (menuState) {
+                    case "login":
+                        return <LoginForm onSuccess={(data: any) => setAuthComplete(data.session)} />;
+                    case "register":
+                        return <RegisterForm onSuccess={() => setMenuState("login")} />;
+                    default:
+                        return null;
+                }
+            })}
             <button className="switchform-button">
                 {menuState == "login" ? "Need an account?" : "Already have an account?"}
                 <span onClick={() => setMenuState(menuState == "login" ? "register" : "login")}>{menuState == "login" ? "Register" : "Login"}</span>
@@ -68,7 +73,6 @@ export function LoginForm( { onSuccess } ) {
         event.preventDefault();
         setLoading(true);
         setError(null);
-
         try {
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: formData.email,
@@ -113,12 +117,10 @@ export function RegisterForm( { onSuccess } ) {
     });
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
-
     const handleSubmit = async (event) => {
         event.preventDefault();
         setLoading(true);
         setError(null);
-
         try {
             // Validate form data
             if (!formData.email || !formData.username || !formData.password || !formData.dob) {

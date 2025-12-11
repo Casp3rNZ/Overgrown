@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { ChatBox } from "./chatBox";
-import Game from "../App";
+import Game from "../game";
 import { render } from "preact";
 import { HUD } from "./HUD";
 import { DeathScreen } from "./deathScreen";
 import { initAudioEngine } from "../sound/audioEngine";
 import { UserAuthForm } from "./userAuthForm";
+import { loadTestMenuScene } from "../testSceneLoader";
 import '../CSS/gameUI.css';
 
 export function UIRoot({ game }) {
@@ -107,23 +108,4 @@ export function UIRoot({ game }) {
         {/* Other UI components */}
     </div>
     );
-}
-const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
-const uiRoot = document.getElementById("ui-root") as HTMLDivElement | null;
-
-window.addEventListener("DOMContentLoaded", () => {
-    if (uiRoot) {
-        render(<UserAuthForm loadGameScene={loadGameScene} />, uiRoot);
-    } else {
-        console.error("Error loading UI");
-    }
-});
-
-function loadGameScene ( authToken: any ) {
-    if (canvas && uiRoot && authToken) {
-        const game = new Game(canvas, authToken);
-        render(<UIRoot game={game} />, uiRoot);
-    } else {
-        console.error("Error loading UI");
-    }
 }
