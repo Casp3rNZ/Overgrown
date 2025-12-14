@@ -6,7 +6,7 @@ const SUPABASE_URL = 'https://ggadibwftkzimypfrstb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_sDxu_1fzPsMtB7I2QFfb6w_7uydIEpb';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-export function UserAuthForm( { loadGameScene } ) {
+export function UserAuthForm( { loadMenuScene } ) {
     const [menuState, setMenuState] = useState("login");
     const [authComplete, setAuthComplete] = useState(null);
 
@@ -27,27 +27,25 @@ export function UserAuthForm( { loadGameScene } ) {
     }, []);
 
     if (authComplete != null) {
-        loadGameScene(authComplete);
+        loadMenuScene(authComplete);
         return <div>Authentication Complete! Loading Game...</div>;
     }
 
     return (
         <div className="auth-container">
-            {(() => {
-                switch (menuState) {
-                    case "login":
-                        return <LoginForm onSuccess={(data: any) => setAuthComplete(data.session)} />;
-                    case "register":
-                        return <RegisterForm onSuccess={() => setMenuState("login")} />;
-                    default:
-                        return null;
-                }
-            })}
+            {menuState === "login" && (
+                <LoginForm onSuccess={(data: any) => setAuthComplete(data.session)} />
+            )}
+            {menuState === "register" && (
+                <RegisterForm onSuccess={() => setMenuState("login")} />
+            )}
             <button className="switchform-button">
                 {menuState == "login" ? "Need an account?" : "Already have an account?"}
-                <span onClick={() => setMenuState(menuState == "login" ? "register" : "login")}>{menuState == "login" ? "Register" : "Login"}</span>
+                <span onClick={() => setMenuState(menuState == "login" ? "register" : "login")}>
+                    {menuState == "login" ? " Register" : " Login"}
+                </span>
             </button>
-            <div className="oath-providers">
+            <div className="oauth-providers">
                 <button className="oauth-button" onClick={() => supabase.auth.signInWithOAuth({ provider: 'google' })}>
                     Login with Google
                 </button>

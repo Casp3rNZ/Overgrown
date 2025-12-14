@@ -1,0 +1,57 @@
+.main-menu {
+    position: absolute;
+    left: 1rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 0.5rem;
+    border-radius: 10px;
+}
+
+.main-menu-header {
+    margin-bottom: 0.5rem;
+}
+
+.main-menu-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.main-menu-header p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.main-menu-options-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.main-menu-options-list li {
+    margin: 0.3rem 0;
+}
+
+.main-menu-options-list button {
+    width: 100%;
+    padding: 0.4rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #37ac71;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.main-menu-options-list button:hover {
+    background-color: #2e8b57;
+}
+
+.main-menu-options-list button:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+}

@@ -4,8 +4,8 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,  // Auto-open browser
-    allowedHosts: ['localhost', '192.168.4.23'],
-    host: true
+    allowedHosts: ['localhost'],
+    host: false
   },
   build: {
     outDir: 'dist'
